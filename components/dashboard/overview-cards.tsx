@@ -2,9 +2,8 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Triangle, Cloud, Server, Container, Activity } from "lucide-react";
-import { dockerProjects } from "@/lib/docker-projects";
 
-interface PlatformSummary {
+export interface PlatformSummary {
   vercelProjects: number;
   cloudflareZones: number;
   cloudflareBuckets: number;
@@ -26,8 +25,8 @@ export function OverviewCards({ data }: { data: PlatformSummary }) {
     {
       title: "Docker / VPS",
       icon: Container,
-      value: `${dockerProjects.length} containers`,
-      description: `Hetzner (${data.hetznerServers} servers)`,
+      value: `${data.hetznerServers} servers`,
+      description: `Auto-discovered containers`,
       color: "text-blue-500",
     },
     {

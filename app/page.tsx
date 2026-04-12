@@ -6,8 +6,8 @@ import { UnifiedTable } from "@/components/dashboard/unified-table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetchApi } from "@/lib/fetchers";
-import type { VercelProject, UnifiedProject, HealthCheck } from "@/lib/types";
-import { dockerProjects } from "@/lib/docker-projects";
+import type { VercelProject, UnifiedProject, HealthCheck, CFDNSRecord, HetznerServer, GitHubRepo } from "@/lib/types";
+import { discoverDockerProjects } from "@/lib/docker-projects";
 import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -27,15 +27,32 @@ export default function DashboardPage() {
   async function loadData() {
     setLoading(true);
     try {
-      const [vercelData, cfData, hetznerData, healthData] = await Promise.allSettled([
+      const [vercelData, cfData, hetznerData, healthData, githubData, dnsData] = await Promise.allSettled([
         fetchApi<VercelProject[]>("/api/vercel?action=projects"),
-        fetchApi<{ zones: unknown[]; r2Buckets: unknown[]; workers: unknown[] }>("/api/cloudflare?action=overview"),
-        fetchApi<{ id: number; name: string; status: string }[]>("/api/hetzner?action=servers"),
+        fetchApi<{ zones: { id: string }[]; r2Buckets: unknown[]; workers: unknown[] }>("/api/cloudflare?action=overview"),
+        fetchApi<HetznerServer[]>("/api/hetzner?action=servers"),
         fetchApi<{ results: HealthCheck[] }>("/api/health"),
+        fetchApi<GitHubRepo[]>("/api/github?action=repos"),
+        // DNS will be fetched after we have zone ID
+        Promise.resolve([] as CFDNSRecord[]),
       ]);
 
       const healthResults: HealthCheck[] =
         healthData.status === "fulfilled" ? healthData.value.results ?? [] : [];
+      const servers: HetznerServer[] =
+        hetznerData.status === "fulfilled" ? hetznerData.value : [];
+      const repos: GitHubRepo[] =
+        githubData.status === "fulfilled" ? githubData.value : [];
+
+      // Fetch DNS records
+      let dnsRecords: CFDNSRecord[] = [];
+      if (cfData.status === "fulfilled" && cfData.value.zones.length > 0) {
+        try {
+          dnsRecords = await fetchApi<CFDNSRecord[]>(
+            `/api/cloudflare?action=dns&zoneId=${cfData.value.zones[0].id}`
+          );
+        } catch { /* ignore */ }
+      }
 
       const unified: UnifiedProject[] = [];
 
@@ -58,18 +75,25 @@ export default function DashboardPage() {
         }
       }
 
-      // Docker projects (from config + health check status)
-      for (const dp of dockerProjects) {
-        const health = healthResults.find((h) => h.url?.includes(dp.subdomain));
+      // Docker projects - AUTO-DISCOVERED from DNS + GitHub + health
+      const dockerDiscovered = discoverDockerProjects({
+        dnsRecords,
+        hetznerServers: servers,
+        repos,
+        repoCICD: {}, // We don't have CI/CD data on client side, but matching still works
+        healthResults,
+      });
+
+      for (const dp of dockerDiscovered) {
         unified.push({
-          id: `docker-${dp.repo}`,
+          id: `docker-${dp.subdomain}`,
           name: dp.name,
           platform: "docker",
-          status: health?.status === "up" ? "healthy" : health?.status === "down" ? "down" : "unknown",
+          status: dp.status === "up" ? "healthy" : dp.status === "protected" ? "healthy" : dp.status === "down" ? "down" : "unknown",
           url: `https://${dp.subdomain}`,
           framework: "Docker",
           domains: [dp.subdomain],
-          gitRepo: `sc122/${dp.repo}`,
+          gitRepo: dp.repo ? `sc122/${dp.repo}` : undefined,
         });
       }
 
@@ -78,7 +102,7 @@ export default function DashboardPage() {
         vercelProjects: vercelData.status === "fulfilled" ? vercelData.value.length : 0,
         cloudflareZones: cfData.status === "fulfilled" ? cfData.value.zones.length : 0,
         cloudflareBuckets: cfData.status === "fulfilled" ? cfData.value.r2Buckets.length : 0,
-        hetznerServers: hetznerData.status === "fulfilled" ? hetznerData.value.length : 0,
+        hetznerServers: servers.length,
         healthUp: unified.filter((p) => p.status === "healthy").length,
         healthDown: unified.filter((p) => p.status === "down").length,
         healthTotal: unified.length,

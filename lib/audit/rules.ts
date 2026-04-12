@@ -1,6 +1,6 @@
 import type { AuditFinding, AuditContext } from "@/lib/types";
 import { mgmt } from "@/lib/utils";
-import { findDockerBySubdomain, dockerProjects } from "@/lib/docker-projects";
+import { discoverDockerProjects } from "@/lib/docker-projects";
 
 export type AuditRule = {
   id: string;
@@ -27,9 +27,16 @@ function getDeployedRepoNames(ctx: AuditContext): Set<string> {
   for (const p of ctx.vercelProjects) {
     if (p.link?.repo) deployed.add(p.link.repo.toLowerCase());
   }
-  // Docker project repos (from config)
+  // Docker projects (auto-discovered from DNS + GitHub)
+  const dockerProjects = discoverDockerProjects({
+    dnsRecords: ctx.dnsRecords,
+    hetznerServers: ctx.hetznerServers,
+    repos: ctx.repos,
+    repoCICD: ctx.repoCICD,
+    healthResults: ctx.healthResults,
+  });
   for (const dp of dockerProjects) {
-    deployed.add(dp.repo.toLowerCase());
+    if (dp.repo) deployed.add(dp.repo.toLowerCase());
   }
   // Repos with Dockerfile/vercel.json detected by CI/CD scan
   for (const [name, cicd] of Object.entries(ctx.repoCICD)) {
@@ -237,10 +244,7 @@ export const dnsIntegrity: AuditRule = {
         });
       }
 
-      // Try to identify source repo — first check Docker config, then fuzzy match
-      const dockerProject = findDockerBySubdomain(record.name);
-      if (dockerProject) continue; // Known mapping — all good
-
+      // Try to identify source repo via auto-discovery matching
       const matchingRepo = ctx.repos.find((r) => strictSubdomainMatch(subdomain, r.name));
       const matchingDocker = Object.keys(ctx.repoCICD).find((name) => strictSubdomainMatch(subdomain, name));
 
