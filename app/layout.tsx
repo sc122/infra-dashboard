@@ -3,6 +3,7 @@ import { Rubik } from "next/font/google";
 import "./globals.css";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { CommandPalette } from "@/components/dashboard/command-palette";
+import { SetupWizard } from "@/components/dashboard/setup-wizard";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 const rubik = Rubik({ subsets: ["hebrew", "latin"] });
@@ -22,6 +23,7 @@ export default function RootLayout({
       <body className={`${rubik.className} antialiased`}>
         <TooltipProvider>
           <CommandPalette />
+          <SetupWizard />
           <div className="flex min-h-screen">
             <div className="flex-1 overflow-auto">{children}</div>
             <Sidebar />

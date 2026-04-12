@@ -1,0 +1,4 @@
+[
+  { "id": "prj_1", "name": "my-app", "framework": "nextjs", "nodeVersion": "24.x", "createdAt": 1775000000000, "updatedAt": 1775000000000, "live": false, "latestDeployment": { "id": "dpl_1", "url": "my-app-abc.vercel.app", "createdAt": 1775000000000, "readyState": "READY", "target": "production" }, "link": { "type": "github", "repo": "my-app", "org": "user" }, "domains": ["my-app.vercel.app", "app.example.com"] },
+  { "id": "prj_2", "name": "landing-page", "framework": null, "nodeVersion": "24.x", "createdAt": 1770000000000, "updatedAt": 1770000000000, "live": false, "latestDeployment": { "id": "dpl_2", "url": "landing-page-def.vercel.app", "createdAt": 1770000000000, "readyState": "READY", "target": "production" }, "link": { "type": "github", "repo": "landing-page", "org": "user" }, "domains": ["example.com", "landing-page.vercel.app"] }
+]

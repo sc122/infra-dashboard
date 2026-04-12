@@ -1,36 +1,107 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Infra Dashboard
 
-## Getting Started
+> Open-source unified infrastructure management. Monitor all your platforms from one place.
 
-First, run the development server:
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/sc122/infra-dashboard&env=DASHBOARD_PASSWORD&envDescription=Set%20a%20password%20to%20protect%20your%20dashboard&project-name=my-infra-dashboard)
+
+## Features
+
+- **Auto-Discovery** — Finds all your projects automatically across platforms
+- **Unified View** — Vercel, Netlify, Cloudflare, Hetzner VPS, GitHub in one table
+- **Smart Classification** — Production / Active / Inactive tiers with filters
+- **Code-to-Deploy Map** — Traces repo → platform → deployment → domain
+- **Health Monitoring** — HTTP checks with response times and Telegram alerts
+- **Infrastructure Audit** — 12 automated rules detect security, deployment, CI/CD issues
+- **Telegram Bot** — Daily reports, instant alerts, bot commands (/status, /health, /audit)
+- **Cost Tracking** — Usage bars for each platform's free tier limits
+- **Command Palette** — Cmd+K search across all projects and pages
+- **Zero Config** — No YAML files. Connect platforms via Settings page
+
+## Quick Start
+
+### Option 1: Deploy to Vercel (2 minutes)
+
+1. Click the **Deploy** button above
+2. Set a dashboard password
+3. Open your dashboard → go to **Settings** → connect platforms
+
+### Option 2: Manual Setup
 
 ```bash
+git clone https://github.com/sc122/infra-dashboard.git
+cd infra-dashboard
+npm install
+cp .env.example .env.local
+# Edit .env.local with your tokens
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Getting API Tokens
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Platform | Where | Permissions |
+|----------|-------|-------------|
+| Vercel | [vercel.com/account/tokens](https://vercel.com/account/tokens) | Read |
+| Netlify | [app.netlify.com/user/applications](https://app.netlify.com/user/applications#personal-access-tokens) | Read |
+| Cloudflare | [dash.cloudflare.com/profile/api-tokens](https://dash.cloudflare.com/profile/api-tokens) | Zone:Read, DNS:Read |
+| Hetzner | [console.hetzner.cloud](https://console.hetzner.cloud) → Security → API Tokens | Read |
+| GitHub | [github.com/settings/tokens](https://github.com/settings/tokens) | `repo` scope |
+| Telegram | [@BotFather](https://t.me/BotFather) → /newbot | Bot token + chat ID |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+All tokens are optional. Connect only what you use.
 
-## Learn More
+## Architecture
 
-To learn more about Next.js, take a look at the following resources:
+```
+┌─────────────────────────────────────────────────┐
+│                  Next.js App                     │
+├──────────┬──────────┬──────────┬────────────────┤
+│ Overview │ Code Map │  Audit   │   Settings     │
+│ (auto-   │ (repo →  │ (12 mod- │   (connect     │
+│ discover)│ deploy)  │ ular     │   platforms)   │
+│          │          │ rules)   │                │
+├──────────┴──────────┴──────────┴────────────────┤
+│              Project Discovery Engine            │
+│  Vercel + Netlify + DNS/VPS + GitHub → Project[] │
+├──────────┬──────────┬──────────┬────────────────┤
+│ Vercel   │ Netlify  │ Cloud-   │ Hetzner │GitHub│
+│ API      │ API      │ flare    │ API     │ API  │
+└──────────┴──────────┴──────────┴─────────┴──────┘
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+**Discovery strategies (in priority order):**
+1. GitHub `homepage` field (most accurate)
+2. Repo config files (docker-compose.yml, deploy scripts)
+3. Name matching (subdomain ↔ repo name)
+4. Dockerfile detection
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Adding a New Platform
 
-## Deploy on Vercel
+1. Create `lib/api/newplatform.ts` — API client
+2. Create `app/api/newplatform/route.ts` — proxy route
+3. Create `app/newplatform/page.tsx` — dedicated page
+4. Update `lib/project-discovery.ts` — add discovery source
+5. Update `lib/api/health-checker.ts` — add health checks
+6. Update `lib/audit/engine.ts` — add to data gathering
+7. Update sidebar, overview cards, command palette
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Development
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run dev          # Start dev server
+npm test             # Run unit tests (Vitest)
+npm run type-check   # TypeScript check
+npm run build        # Production build
+```
+
+## Tech Stack
+
+- **Framework:** Next.js 16 (App Router)
+- **UI:** Tailwind CSS + shadcn/ui
+- **Charts:** Recharts
+- **Testing:** Vitest
+- **Hosting:** Vercel
+- **Language:** TypeScript
+
+## License
+
+MIT

@@ -46,6 +46,7 @@ const navSections = [
       { href: "/costs", label: "עלויות", icon: DollarSign },
       { href: "/alerts", label: "התראות", icon: Bell },
       { href: "/audit", label: "ביקורת תשתיות", icon: ShieldCheck },
+      { href: "/settings", label: "הגדרות", icon: Server },
     ],
   },
 ];
