@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendStatusSummary, sendAuditSummary, sendMessage } from "@/lib/api/telegram";
 import { runAudit } from "@/lib/audit/engine";
-import type { HealthCheck } from "@/lib/types";
+import { runHealthChecks } from "@/lib/api/health-checker";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -33,13 +33,9 @@ export async function POST(request: NextRequest) {
     switch (command) {
       case "/status":
       case "/s": {
-        const baseUrl = process.env.VERCEL_URL
-          ? `https://${process.env.VERCEL_URL}`
-          : "http://localhost:3000";
         try {
-          const res = await fetch(`${baseUrl}/api/health`, { cache: "no-store" });
-          const data = await res.json();
-          await sendStatusSummary(data.results ?? []);
+          const results = await runHealthChecks();
+          await sendStatusSummary(results);
         } catch {
           await sendMessage("\u274C \u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05D8\u05E2\u05D9\u05E0\u05EA health check");
         }
@@ -60,13 +56,8 @@ export async function POST(request: NextRequest) {
 
       case "/health":
       case "/h": {
-        const baseUrl = process.env.VERCEL_URL
-          ? `https://${process.env.VERCEL_URL}`
-          : "http://localhost:3000";
         try {
-          const res = await fetch(`${baseUrl}/api/health`, { cache: "no-store" });
-          const data = await res.json();
-          const results: HealthCheck[] = data.results ?? [];
+          const results = await runHealthChecks();
           const lines = results.map((h) => {
             const icon = h.status === "up" ? "\u2705" : "\u274C";
             return `${icon} ${h.name} - ${h.responseTime}ms`;

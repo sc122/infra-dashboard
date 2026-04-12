@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendDailyReport, sendServiceDown, sendCriticalFinding } from "@/lib/api/telegram";
 import { runAudit } from "@/lib/audit/engine";
-import type { HealthCheck } from "@/lib/types";
+import { runHealthChecks } from "@/lib/api/health-checker";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -15,19 +15,8 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const baseUrl = process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : "http://localhost:3000";
-
-    // ── Step 1: Health check ──
-    let healthResults: HealthCheck[] = [];
-    try {
-      const healthRes = await fetch(`${baseUrl}/api/health`, { cache: "no-store" });
-      const healthData = await healthRes.json();
-      healthResults = healthData.results ?? [];
-    } catch {
-      // Health check failed
-    }
+    // ── Step 1: Health check (direct, no self-fetch) ──
+    const healthResults = await runHealthChecks();
 
     // ── Step 2: Run audit ──
     const audit = await runAudit();
