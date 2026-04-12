@@ -47,11 +47,25 @@ export default function DashboardPage() {
       }
 
       let repoDeployTargets: Record<string, string[]> = {};
-      try { repoDeployTargets = await fetchApi<Record<string, string[]>>("/api/github?action=all-deploy-targets"); } catch {}
+      let repoCICD: DiscoveryInput["repoCICD"] = {};
+      try {
+        const combined = await fetchApi<{
+          targets: Record<string, string[]>;
+          cicd: Record<string, { hasDockerfile: boolean; hasActions: boolean; hasVercelConfig: boolean; lastConclusion: string | null }>;
+        }>("/api/github?action=all-deploy-targets");
+        repoDeployTargets = combined.targets ?? {};
+        // Convert to discovery format
+        for (const [name, info] of Object.entries(combined.cicd ?? {})) {
+          repoCICD[name] = {
+            ...info,
+            lastRun: info.lastConclusion ? { conclusion: info.lastConclusion } as never : undefined,
+          };
+        }
+      } catch {}
 
       const input: DiscoveryInput = {
         vercelProjects, netlifySites, dnsRecords, hetznerServers: servers,
-        repos, repoCICD: {}, healthResults, repoDeployTargets,
+        repos, repoCICD, healthResults, repoDeployTargets,
       };
       const discovered = discoverAllProjects(input);
 

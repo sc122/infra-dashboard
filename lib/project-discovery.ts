@@ -289,11 +289,21 @@ function findMatchingRepos(
   const matchedNames = new Set<string>();
 
   // Strategy 1: Repo deploy targets (docker-compose, deploy scripts mentioning this domain)
+  // IMPORTANT: match the full domain exactly, or the subdomain against the TARGET's subdomain
+  // (not against the full target string, because "keep" would match "keepit-ai.com" in every target)
   if (repoDeployTargets) {
     for (const [repoName, targets] of Object.entries(repoDeployTargets)) {
-      const domainMatch = targets.some((t) =>
-        t.includes(fullDomain) || t.includes(subdomain)
-      );
+      const domainMatch = targets.some((t) => {
+        // Exact full domain match
+        if (t === fullDomain) return true;
+        // Target is a full domain — extract its subdomain and compare
+        if (t.includes(".")) {
+          const targetSub = t.split(".")[0];
+          return targetSub === subdomain;
+        }
+        // Target is a container name — match against subdomain
+        return t.toLowerCase().replace(/[-_]/g, "") === subClean;
+      });
       if (domainMatch) {
         const repo = repos.find((r) => r.name === repoName);
         if (repo && !matchedNames.has(repo.name)) {

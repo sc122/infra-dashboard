@@ -251,10 +251,12 @@ export const dnsIntegrity: AuditRule = {
       let foundViaDeployTarget = false;
       if (ctx.repoDeployTargets) {
         for (const [, targets] of Object.entries(ctx.repoDeployTargets)) {
-          if (targets.some((t) => t.includes(record.name) || t.includes(subdomain))) {
-            foundViaDeployTarget = true;
-            break;
-          }
+          const match = targets.some((t) => {
+            if (t === record.name) return true; // Exact full domain match
+            if (t.includes(".")) return t.split(".")[0] === subdomain; // Compare subdomains
+            return t.toLowerCase().replace(/[-_]/g, "") === subdomain.toLowerCase().replace(/[-_]/g, ""); // Container name match
+          });
+          if (match) { foundViaDeployTarget = true; break; }
         }
       }
       if (foundViaDeployTarget) continue; // Known mapping from repo content

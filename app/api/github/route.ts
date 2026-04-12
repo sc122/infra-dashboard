@@ -34,26 +34,27 @@ export async function GET(request: NextRequest) {
         return NextResponse.json(await extractRepoDeployTarget(owner, repo));
 
       case "all-deploy-targets": {
-        // Scan all repos with Dockerfiles for domain references
+        // Scan all repos: CI/CD info + deploy targets for Docker repos
         const allRepos = await listRepos();
         const targets: Record<string, string[]> = {};
-        const cicdChecks = await Promise.allSettled(
-          allRepos.slice(0, 20).map(async (r) => {
+        const cicdMap: Record<string, { hasDockerfile: boolean; hasActions: boolean; hasVercelConfig: boolean; lastConclusion: string | null }> = {};
+        const checks = await Promise.allSettled(
+          allRepos.slice(0, 25).map(async (r) => {
             const [o, n] = r.full_name.split("/");
             const cicd = await getRepoCICD(o, n);
+            cicdMap[r.name] = {
+              hasDockerfile: cicd.hasDockerfile,
+              hasActions: cicd.hasActions,
+              hasVercelConfig: cicd.hasVercelConfig,
+              lastConclusion: cicd.lastRun?.conclusion ?? null,
+            };
             if (cicd.hasDockerfile) {
               const t = await extractRepoDeployTarget(o, n);
-              if (t.length > 0) return { name: r.name, targets: t };
+              if (t.length > 0) targets[r.name] = t;
             }
-            return null;
           })
         );
-        for (const r of cicdChecks) {
-          if (r.status === "fulfilled" && r.value) {
-            targets[r.value.name] = r.value.targets;
-          }
-        }
-        return NextResponse.json(targets);
+        return NextResponse.json({ targets, cicd: cicdMap });
       }
 
       default:
