@@ -80,6 +80,7 @@ export async function runAudit(): Promise<AuditReport> {
   // ── Phase 3: Run rules ──
   const ctx: AuditContext = {
     repos, repoCICD, vercelProjects, cfZones, dnsRecords, hetznerServers, healthResults,
+    repoDeployTargets,
   };
 
   const findings: AuditReport["findings"] = [];

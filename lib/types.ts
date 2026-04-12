@@ -219,6 +219,7 @@ export interface AuditContext {
   dnsRecords: CFDNSRecord[];
   hetznerServers: HetznerServer[];
   healthResults: HealthCheck[];
+  repoDeployTargets?: Record<string, string[]>;
 }
 
 // Code Map - unified view

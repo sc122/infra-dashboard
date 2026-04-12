@@ -22,7 +22,7 @@ function safeId(s: string): string {
 
 /** Build set of repo names that are deployed somewhere */
 function getDeployedRepoNames(ctx: AuditContext): Set<string> {
-  // Use centralized discovery engine
+  // Use centralized discovery engine (with deploy targets for better matching)
   const discovered = getDiscoveredDeployedRepos({
     vercelProjects: ctx.vercelProjects,
     dnsRecords: ctx.dnsRecords,
@@ -30,6 +30,7 @@ function getDeployedRepoNames(ctx: AuditContext): Set<string> {
     repos: ctx.repos,
     repoCICD: ctx.repoCICD,
     healthResults: ctx.healthResults,
+    repoDeployTargets: ctx.repoDeployTargets,
   });
   // Also include repos with Dockerfile/vercel.json from CI/CD scan
   for (const [name, cicd] of Object.entries(ctx.repoCICD)) {
@@ -237,7 +238,20 @@ export const dnsIntegrity: AuditRule = {
         });
       }
 
-      // Try to identify source repo via auto-discovery matching
+      // Try to identify source repo via multiple strategies
+      // Strategy 1: deploy target match (repo config files reference this domain)
+      let foundViaDeployTarget = false;
+      if (ctx.repoDeployTargets) {
+        for (const [, targets] of Object.entries(ctx.repoDeployTargets)) {
+          if (targets.some((t) => t.includes(record.name) || t.includes(subdomain))) {
+            foundViaDeployTarget = true;
+            break;
+          }
+        }
+      }
+      if (foundViaDeployTarget) continue; // Known mapping from repo content
+
+      // Strategy 2: name match
       const matchingRepo = ctx.repos.find((r) => strictSubdomainMatch(subdomain, r.name));
       const matchingDocker = Object.keys(ctx.repoCICD).find((name) => strictSubdomainMatch(subdomain, name));
 
