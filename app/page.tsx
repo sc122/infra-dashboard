@@ -6,7 +6,8 @@ import { UnifiedTable } from "@/components/dashboard/unified-table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetchApi } from "@/lib/fetchers";
-import type { VercelProject, UnifiedProject } from "@/lib/types";
+import type { VercelProject, UnifiedProject, HealthCheck } from "@/lib/types";
+import { dockerProjects } from "@/lib/docker-projects";
 import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -26,14 +27,19 @@ export default function DashboardPage() {
   async function loadData() {
     setLoading(true);
     try {
-      const [vercelData, cfData, hetznerData] = await Promise.allSettled([
+      const [vercelData, cfData, hetznerData, healthData] = await Promise.allSettled([
         fetchApi<VercelProject[]>("/api/vercel?action=projects"),
         fetchApi<{ zones: unknown[]; r2Buckets: unknown[]; workers: unknown[] }>("/api/cloudflare?action=overview"),
         fetchApi<{ id: number; name: string; status: string }[]>("/api/hetzner?action=servers"),
+        fetchApi<{ results: HealthCheck[] }>("/api/health"),
       ]);
+
+      const healthResults: HealthCheck[] =
+        healthData.status === "fulfilled" ? healthData.value.results ?? [] : [];
 
       const unified: UnifiedProject[] = [];
 
+      // Vercel projects
       if (vercelData.status === "fulfilled") {
         for (const p of vercelData.value) {
           unified.push({
@@ -52,16 +58,19 @@ export default function DashboardPage() {
         }
       }
 
-      if (hetznerData.status === "fulfilled") {
-        for (const s of hetznerData.value) {
-          unified.push({
-            id: String(s.id),
-            name: s.name,
-            platform: "hetzner",
-            status: s.status === "running" ? "healthy" : "down",
-            domains: [],
-          });
-        }
+      // Docker projects (from config + health check status)
+      for (const dp of dockerProjects) {
+        const health = healthResults.find((h) => h.url?.includes(dp.subdomain));
+        unified.push({
+          id: `docker-${dp.repo}`,
+          name: dp.name,
+          platform: "docker",
+          status: health?.status === "up" ? "healthy" : health?.status === "down" ? "down" : "unknown",
+          url: `https://${dp.subdomain}`,
+          framework: "Docker",
+          domains: [dp.subdomain],
+          gitRepo: `sc122/${dp.repo}`,
+        });
       }
 
       setProjects(unified);

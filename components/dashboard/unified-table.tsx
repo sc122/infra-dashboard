@@ -11,13 +11,15 @@ import {
 } from "@/components/ui/table";
 import { StatusBadge } from "./status-badge";
 import { Badge } from "@/components/ui/badge";
-import { Triangle, Cloud, Server, ExternalLink } from "lucide-react";
+import { Triangle, Cloud, Server, Container, ExternalLink, GitBranch } from "lucide-react";
+import { MgmtLink } from "./mgmt-link";
 import type { UnifiedProject } from "@/lib/types";
 
-const platformIcons = {
+const platformIcons: Record<string, typeof Triangle> = {
   vercel: Triangle,
   cloudflare: Cloud,
   hetzner: Server,
+  docker: Container,
 };
 
 export function UnifiedTable({ projects }: { projects: UnifiedProject[] }) {
@@ -29,8 +31,8 @@ export function UnifiedTable({ projects }: { projects: UnifiedProject[] }) {
           <TableHead className="text-right">שם</TableHead>
           <TableHead className="text-right">סטטוס</TableHead>
           <TableHead className="text-right">Framework</TableHead>
-          <TableHead className="text-right">דומיינים</TableHead>
-          <TableHead className="text-right">Deploy אחרון</TableHead>
+          <TableHead className="text-right">דומיין</TableHead>
+          <TableHead className="text-right">Repo</TableHead>
           <TableHead className="text-right"></TableHead>
         </TableRow>
       </TableHeader>
@@ -77,25 +79,32 @@ export function UnifiedTable({ projects }: { projects: UnifiedProject[] }) {
                   )}
                 </div>
               </TableCell>
-              <TableCell className="text-xs text-muted-foreground">
-                {project.lastDeployAt
-                  ? new Date(project.lastDeployAt).toLocaleDateString("he-IL", {
-                      day: "2-digit",
-                      month: "2-digit",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })
-                  : "-"}
+              <TableCell>
+                {project.gitRepo ? (
+                  <a
+                    href={`https://github.com/${project.gitRepo}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-blue-500 hover:underline flex items-center gap-1"
+                  >
+                    <GitBranch className="h-3 w-3" />
+                    {project.gitRepo.split("/")[1]}
+                  </a>
+                ) : (
+                  <span className="text-xs text-red-400">אין repo</span>
+                )}
               </TableCell>
               <TableCell>
-                {project.platform === "vercel" && (
-                  <Link
-                    href={`/vercel/${project.id}`}
-                    className="text-xs text-blue-500 hover:underline"
-                  >
-                    פרטים
-                  </Link>
-                )}
+                <div className="flex items-center gap-1">
+                  {project.platform === "vercel" && (
+                    <Link href={`/vercel/${project.id}`} className="text-xs text-blue-500 hover:underline">
+                      פרטים
+                    </Link>
+                  )}
+                  {project.url && (
+                    <MgmtLink href={project.url} tooltip="פתח אתר" iconOnly />
+                  )}
+                </div>
               </TableCell>
             </TableRow>
           );

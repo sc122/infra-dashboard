@@ -1,5 +1,6 @@
 import type { AuditFinding, AuditContext } from "@/lib/types";
 import { mgmt } from "@/lib/utils";
+import { findDockerBySubdomain, dockerProjects } from "@/lib/docker-projects";
 
 export type AuditRule = {
   id: string;
@@ -22,9 +23,15 @@ function safeId(s: string): string {
 /** Build set of repo names that are deployed somewhere */
 function getDeployedRepoNames(ctx: AuditContext): Set<string> {
   const deployed = new Set<string>();
+  // Vercel-linked repos
   for (const p of ctx.vercelProjects) {
     if (p.link?.repo) deployed.add(p.link.repo.toLowerCase());
   }
+  // Docker project repos (from config)
+  for (const dp of dockerProjects) {
+    deployed.add(dp.repo.toLowerCase());
+  }
+  // Repos with Dockerfile/vercel.json detected by CI/CD scan
   for (const [name, cicd] of Object.entries(ctx.repoCICD)) {
     if (cicd.hasDockerfile || cicd.hasVercelConfig) deployed.add(name.toLowerCase());
   }
@@ -230,7 +237,10 @@ export const dnsIntegrity: AuditRule = {
         });
       }
 
-      // Try to identify source repo (strict matching)
+      // Try to identify source repo — first check Docker config, then fuzzy match
+      const dockerProject = findDockerBySubdomain(record.name);
+      if (dockerProject) continue; // Known mapping — all good
+
       const matchingRepo = ctx.repos.find((r) => strictSubdomainMatch(subdomain, r.name));
       const matchingDocker = Object.keys(ctx.repoCICD).find((name) => strictSubdomainMatch(subdomain, name));
 
@@ -240,9 +250,9 @@ export const dnsIntegrity: AuditRule = {
           category: "deployment",
           severity: "info",
           title: `${record.name} - repo מקור לא מזוהה`,
-          description: `DNS record פעיל ללא GitHub repo תואם. לא ניתן לעקוב אחרי קוד המקור.`,
+          description: `DNS record פעיל ללא GitHub repo תואם. הוסף מיפוי ב-docker-projects.ts.`,
           resource: { type: "dns-record", name: record.name, platform: "cloudflare", url: mgmt.cloudflare.dns(rootDomain) },
-          recommendation: `תעד: איזה repo/container מגיש ${record.name}?`,
+          recommendation: `הוסף entry ב-lib/docker-projects.ts`,
           autoFixable: false,
         });
       }

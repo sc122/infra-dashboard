@@ -2,7 +2,7 @@
 export interface UnifiedProject {
   id: string;
   name: string;
-  platform: "vercel" | "cloudflare" | "hetzner";
+  platform: "vercel" | "cloudflare" | "hetzner" | "docker";
   status: "healthy" | "degraded" | "down" | "unknown";
   url?: string;
   framework?: string;

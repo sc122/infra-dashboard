@@ -1,7 +1,8 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Triangle, Cloud, Server, Activity } from "lucide-react";
+import { Triangle, Cloud, Server, Container, Activity } from "lucide-react";
+import { dockerProjects } from "@/lib/docker-projects";
 
 interface PlatformSummary {
   vercelProjects: number;
@@ -23,18 +24,18 @@ export function OverviewCards({ data }: { data: PlatformSummary }) {
       color: "text-black dark:text-white",
     },
     {
+      title: "Docker / VPS",
+      icon: Container,
+      value: `${dockerProjects.length} containers`,
+      description: `Hetzner (${data.hetznerServers} servers)`,
+      color: "text-blue-500",
+    },
+    {
       title: "Cloudflare",
       icon: Cloud,
       value: `${data.cloudflareZones} domains, ${data.cloudflareBuckets} R2`,
       description: "DNS, R2, Workers",
       color: "text-orange-500",
-    },
-    {
-      title: "Hetzner VPS",
-      icon: Server,
-      value: `${data.hetznerServers} servers`,
-      description: "Docker containers",
-      color: "text-red-500",
     },
     {
       title: "Health",
