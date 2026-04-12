@@ -33,5 +33,8 @@ export const mgmt = {
   },
   github: {
     repo: (org: string, repo: string) => `https://github.com/${org}/${repo}`,
+    actions: (org: string, repo: string) => `https://github.com/${org}/${repo}/actions`,
+    settings: (org: string, repo: string) => `https://github.com/${org}/${repo}/settings`,
+    profile: (user: string) => `https://github.com/${user}`,
   },
 };

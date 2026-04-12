@@ -11,18 +11,39 @@ import {
   DollarSign,
   Bell,
   Activity,
+  GitBranch,
+  Map,
+  Search,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Separator } from "@/components/ui/separator";
 
-const navItems = [
-  { href: "/", label: "סקירה כללית", icon: LayoutDashboard },
-  { href: "/vercel", label: "Vercel", icon: Triangle },
-  { href: "/cloudflare", label: "Cloudflare", icon: Cloud },
-  { href: "/vps", label: "VPS - Hetzner", icon: Server },
-  { href: "/domains", label: "מפת דומיינים", icon: Globe },
-  { href: "/health", label: "Health Monitor", icon: Activity },
-  { href: "/costs", label: "עלויות", icon: DollarSign },
-  { href: "/alerts", label: "התראות", icon: Bell },
+const navSections = [
+  {
+    label: "כללי",
+    items: [
+      { href: "/", label: "סקירה כללית", icon: LayoutDashboard },
+      { href: "/code-map", label: "Code → Deploy", icon: Map },
+    ],
+  },
+  {
+    label: "פלטפורמות",
+    items: [
+      { href: "/github", label: "GitHub", icon: GitBranch },
+      { href: "/vercel", label: "Vercel", icon: Triangle },
+      { href: "/cloudflare", label: "Cloudflare", icon: Cloud },
+      { href: "/vps", label: "VPS - Hetzner", icon: Server },
+    ],
+  },
+  {
+    label: "תשתית",
+    items: [
+      { href: "/domains", label: "מפת דומיינים", icon: Globe },
+      { href: "/health", label: "Health Monitor", icon: Activity },
+      { href: "/costs", label: "עלויות", icon: DollarSign },
+      { href: "/alerts", label: "התראות", icon: Bell },
+    ],
+  },
 ];
 
 export function Sidebar() {
@@ -37,26 +58,49 @@ export function Sidebar() {
         </h1>
         <p className="text-xs text-muted-foreground mt-1">מרכז שליטה בתשתיות</p>
       </div>
-      <nav className="flex-1 p-2 space-y-1">
-        {navItems.map((item) => {
-          const isActive = pathname === item.href ||
-            (item.href !== "/" && pathname.startsWith(item.href));
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
-                isActive
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              )}
-            >
-              <item.icon className="h-4 w-4" />
-              {item.label}
-            </Link>
-          );
-        })}
+
+      {/* Quick search hint */}
+      <div className="px-3 pt-3 pb-1">
+        <button
+          className="w-full flex items-center gap-2 px-3 py-1.5 rounded-md text-xs text-muted-foreground bg-muted/50 hover:bg-muted transition-colors"
+          onClick={() => {
+            window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }));
+          }}
+        >
+          <Search className="h-3 w-3" />
+          <span className="flex-1 text-right">חיפוש מהיר...</span>
+          <kbd className="text-[10px] bg-background px-1 py-0.5 rounded border">⌘K</kbd>
+        </button>
+      </div>
+
+      <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
+        {navSections.map((section, si) => (
+          <div key={section.label}>
+            {si > 0 && <Separator className="my-2" />}
+            <p className="text-[10px] font-semibold text-muted-foreground px-3 py-1 uppercase tracking-wider">
+              {section.label}
+            </p>
+            {section.items.map((item) => {
+              const isActive = pathname === item.href ||
+                (item.href !== "/" && pathname.startsWith(item.href));
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+                    isActive
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  )}
+                >
+                  <item.icon className="h-4 w-4" />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+        ))}
       </nav>
       <div className="p-4 border-t text-xs text-muted-foreground">
         <p>sc122&apos;s projects</p>

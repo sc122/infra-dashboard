@@ -141,3 +141,59 @@ export interface PlatformCost {
   currency: string;
   details: Record<string, number>;
 }
+
+// GitHub types
+export interface GitHubRepo {
+  id: number;
+  name: string;
+  full_name: string;
+  html_url: string;
+  description: string | null;
+  language: string | null;
+  default_branch: string;
+  pushed_at: string;
+  updated_at: string;
+  created_at: string;
+  private: boolean;
+  fork: boolean;
+  topics: string[];
+  size: number;
+  stargazers_count: number;
+  open_issues_count: number;
+}
+
+export interface GitHubWorkflowRun {
+  id: number;
+  name: string;
+  status: string;
+  conclusion: string | null;
+  html_url: string;
+  created_at: string;
+  updated_at: string;
+  head_branch: string;
+  head_commit?: { message: string; author: { name: string } };
+}
+
+export interface GitHubCommit {
+  sha: string;
+  commit: {
+    message: string;
+    author: { name: string; date: string };
+  };
+  html_url: string;
+}
+
+// Code Map - unified view
+export interface CodeProject {
+  repo: GitHubRepo;
+  platform: "vercel" | "hetzner" | "none";
+  vercelProject?: VercelProject;
+  domains: string[];
+  cicd: {
+    hasActions: boolean;
+    lastRun?: GitHubWorkflowRun;
+    hasDockerfile: boolean;
+    hasVercelConfig: boolean;
+  };
+  lastCommit?: GitHubCommit;
+}
