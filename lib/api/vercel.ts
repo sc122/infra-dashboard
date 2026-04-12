@@ -23,7 +23,18 @@ async function vercelFetch<T>(path: string): Promise<T> {
 
 export async function listProjects(): Promise<VercelProject[]> {
   const data = await vercelFetch<{ projects: VercelProject[] }>("/v9/projects?limit=100");
-  return data.projects;
+  // Enrich each project with its domains (not returned by list endpoint)
+  const enriched = await Promise.all(
+    data.projects.map(async (p) => {
+      try {
+        const full = await vercelFetch<VercelProject>(`/v9/projects/${p.id}`);
+        return { ...p, domains: full.domains ?? [], link: full.link };
+      } catch {
+        return { ...p, domains: [] };
+      }
+    })
+  );
+  return enriched;
 }
 
 export async function getProject(projectId: string): Promise<VercelProject> {
