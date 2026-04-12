@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { sendHealthReport } from "@/lib/api/telegram";
+import { sendDailyReport, sendServiceDown, sendCriticalFinding } from "@/lib/api/telegram";
+import { runAudit } from "@/lib/audit/engine";
+import type { HealthCheck } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 export async function GET(request: NextRequest) {
-  // Verify cron secret (Vercel sends this header for cron jobs)
+  // Verify cron secret
   const authHeader = request.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
   if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
@@ -12,35 +15,66 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Call our own health endpoint
     const baseUrl = process.env.VERCEL_URL
       ? `https://${process.env.VERCEL_URL}`
       : "http://localhost:3000";
 
-    const healthRes = await fetch(`${baseUrl}/api/health`);
-    const healthData = await healthRes.json();
+    // ── Step 1: Health check ──
+    let healthResults: HealthCheck[] = [];
+    try {
+      const healthRes = await fetch(`${baseUrl}/api/health`, { cache: "no-store" });
+      const healthData = await healthRes.json();
+      healthResults = healthData.results ?? [];
+    } catch {
+      // Health check failed
+    }
 
-    // Send Telegram alert if any services are down
-    if (healthData.results) {
-      await sendHealthReport(healthData.results);
+    // ── Step 2: Run audit ──
+    const audit = await runAudit();
+
+    // ── Step 3: Send daily report (always, even if all OK) ──
+    try {
+      await sendDailyReport(healthResults, audit);
+    } catch (err) {
+      console.error("Failed to send daily report:", err);
+    }
+
+    // ── Step 4: Immediate alerts for DOWN services ──
+    const downServices = healthResults.filter((h) => h.status === "down");
+    if (downServices.length > 0) {
+      try {
+        await sendServiceDown(downServices);
+      } catch {
+        // Already reported in daily report
+      }
+    }
+
+    // ── Step 5: Immediate alerts for NEW critical findings ──
+    const criticalFindings = audit.findings.filter((f) => f.severity === "critical");
+    for (const finding of criticalFindings) {
+      try {
+        await sendCriticalFinding(finding);
+      } catch {
+        // Already in daily report
+      }
     }
 
     return NextResponse.json({
       success: true,
-      checkedAt: healthData.checkedAt,
-      total: healthData.total,
-      up: healthData.up,
-      down: healthData.down,
+      healthChecked: healthResults.length,
+      healthUp: healthResults.filter((h) => h.status === "up").length,
+      healthDown: downServices.length,
+      auditScore: audit.score,
+      auditFindings: audit.summary.total,
+      criticalAlerts: criticalFindings.length,
+      reportSent: true,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
-    // Try to send error notification
     try {
       const { sendAlert } = await import("@/lib/api/telegram");
-      await sendAlert("critical", "Health Check Failed", message);
-    } catch {
-      // Telegram might not be configured
-    }
+      await sendAlert("critical", "Cron Job Failed", message);
+    } catch { /* Telegram might be down too */ }
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
