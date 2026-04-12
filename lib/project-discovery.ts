@@ -4,16 +4,18 @@
  * A "project" = any URL that a user accesses.
  * This engine auto-discovers all projects by aggregating:
  *   1. Vercel projects (with their domains)
- *   2. DNS A records pointing to VPS IPs (Docker containers)
- *   3. GitHub repos (linked by name matching or Vercel config)
+ *   2. Netlify sites (with their domains)
+ *   3. DNS A records pointing to VPS IPs (Docker containers)
+ *   4. GitHub repos (linked by name matching or platform config)
  *
- * Zero config. Add a Vercel project or a DNS record → it appears automatically.
+ * Zero config. Add a project on any platform → it appears automatically.
  */
 
 import type {
   VercelProject, CFDNSRecord, HetznerServer,
   GitHubRepo, GitHubWorkflowRun, HealthCheck,
 } from "@/lib/types";
+import type { NetlifySite } from "@/lib/api/netlify";
 
 // ─── Project Model ────────────────────────────────────────────
 
@@ -31,9 +33,11 @@ export interface Project {
 
   /** Where it runs */
   hosting: {
-    platform: "vercel" | "docker-vps";
+    platform: "vercel" | "netlify" | "docker-vps";
     vercelProjectId?: string;
     vercelProjectName?: string;
+    netlifySiteId?: string;
+    netlifySiteName?: string;
     serverName?: string;
     serverIP?: string;
   };
@@ -71,6 +75,7 @@ export interface Project {
 
 export interface DiscoveryInput {
   vercelProjects: VercelProject[];
+  netlifySites?: NetlifySite[];
   dnsRecords: CFDNSRecord[];
   hetznerServers: HetznerServer[];
   repos: GitHubRepo[];
@@ -149,7 +154,56 @@ export function discoverAllProjects(input: DiscoveryInput): Project[] {
     });
   }
 
-  // ── Source 2: DNS → VPS (Docker projects) ──
+  // ── Source 2: Netlify Sites ──
+  for (const site of input.netlifySites ?? []) {
+    const domain = site.custom_domain ?? site.default_domain ?? `${site.name}.netlify.app`;
+    if (seenDomains.has(domain)) continue;
+    seenDomains.add(domain);
+
+    // Extract repo from build_settings
+    const repoUrl = site.build_settings?.repo_url;
+    let linkedRepo: GitHubRepo | null = null;
+    if (repoUrl) {
+      const repoName = repoUrl.split("/").pop()?.replace(/\.git$/, "");
+      if (repoName) {
+        linkedRepo = input.repos.find((r) => r.name.toLowerCase() === repoName.toLowerCase()) ?? null;
+      }
+    }
+
+    const health = input.healthResults.find((h) => h.url?.includes(domain) || h.name === site.name);
+    const cicdInfo = linkedRepo ? input.repoCICD[linkedRepo.name] : undefined;
+
+    projects.push({
+      id: `netlify-${site.id}`,
+      name: formatProjectName(site.name),
+      url: site.ssl_url || `https://${domain}`,
+      domain,
+      aliases: [],
+      hosting: {
+        platform: "netlify",
+        netlifySiteId: site.id,
+        netlifySiteName: site.name,
+      },
+      repos: linkedRepo ? [{
+        name: linkedRepo.name,
+        fullName: linkedRepo.full_name,
+        url: linkedRepo.html_url,
+        language: linkedRepo.language,
+      }] : [],
+      status: site.published_deploy?.state === "ready" ? "up" : health?.status ?? "unknown",
+      responseTime: health?.responseTime,
+      cicd: {
+        hasActions: cicdInfo?.hasActions ?? false,
+        hasDockerfile: cicdInfo?.hasDockerfile ?? false,
+        lastRunConclusion: cicdInfo?.lastRun?.conclusion,
+      },
+      hasCustomDomain: !!site.custom_domain,
+      cfAccessProtected: false,
+      lastActivity: site.published_deploy?.published_at ?? site.updated_at,
+    });
+  }
+
+  // ── Source 3: DNS → VPS (Docker projects) ──
   const vpsIPs = new Set(
     input.hetznerServers.map((s) => s.public_net?.ipv4?.ip).filter(Boolean)
   );

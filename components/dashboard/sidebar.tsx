@@ -15,6 +15,7 @@ import {
   Map,
   Search,
   ShieldCheck,
+  Hexagon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
@@ -34,6 +35,7 @@ const navSections = [
       { href: "/vercel", label: "Vercel", icon: Triangle },
       { href: "/cloudflare", label: "Cloudflare", icon: Cloud },
       { href: "/vps", label: "VPS - Hetzner", icon: Server },
+      { href: "/netlify", label: "Netlify", icon: Hexagon },
     ],
   },
   {

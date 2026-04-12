@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { fetchApi } from "@/lib/fetchers";
 import { discoverAllProjects, type Project, type DiscoveryInput } from "@/lib/project-discovery";
 import type { VercelProject, CFDNSRecord, CFZone, HetznerServer, GitHubRepo, HealthCheck } from "@/lib/types";
+import type { NetlifySite } from "@/lib/api/netlify";
 import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -23,15 +24,17 @@ export default function DashboardPage() {
     setLoading(true);
     try {
       // Fetch all data sources in parallel
-      const [vercelData, cfData, hetznerData, healthData, githubData] = await Promise.allSettled([
+      const [vercelData, cfData, hetznerData, healthData, githubData, netlifyData] = await Promise.allSettled([
         fetchApi<VercelProject[]>("/api/vercel?action=projects"),
         fetchApi<{ zones: CFZone[]; r2Buckets: unknown[] }>("/api/cloudflare?action=overview"),
         fetchApi<HetznerServer[]>("/api/hetzner?action=servers"),
         fetchApi<{ results: HealthCheck[] }>("/api/health"),
         fetchApi<GitHubRepo[]>("/api/github?action=repos"),
+        fetchApi<NetlifySite[]>("/api/netlify?action=sites"),
       ]);
 
       const vercelProjects = vercelData.status === "fulfilled" ? vercelData.value : [];
+      const netlifySites = netlifyData.status === "fulfilled" ? netlifyData.value : [];
       const cfZones = cfData.status === "fulfilled" ? cfData.value.zones : [];
       const servers = hetznerData.status === "fulfilled" ? hetznerData.value : [];
       const healthResults = healthData.status === "fulfilled" ? healthData.value.results ?? [] : [];
@@ -53,7 +56,7 @@ export default function DashboardPage() {
 
       // Discover all projects automatically
       const input: DiscoveryInput = {
-        vercelProjects, dnsRecords, hetznerServers: servers,
+        vercelProjects, netlifySites, dnsRecords, hetznerServers: servers,
         repos, repoCICD: {}, healthResults, repoDeployTargets,
       };
       const discovered = discoverAllProjects(input);

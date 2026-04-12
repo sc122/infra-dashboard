@@ -7,11 +7,12 @@ import { StatusBadge } from "./status-badge";
 import { Badge } from "@/components/ui/badge";
 import { MgmtLink } from "./mgmt-link";
 import { LanguageDot, CICDBadge } from "./service-icon";
-import { Triangle, Container, GitBranch, ExternalLink, Shield, Globe } from "lucide-react";
+import { Triangle, Container, GitBranch, ExternalLink, Shield, Globe, Hexagon } from "lucide-react";
 import type { Project } from "@/lib/project-discovery";
 
-const platformConfig = {
+const platformConfig: Record<string, { icon: typeof Triangle; label: string; color: string }> = {
   vercel: { icon: Triangle, label: "Vercel", color: "text-black dark:text-white" },
+  netlify: { icon: Hexagon, label: "Netlify", color: "text-teal-500" },
   "docker-vps": { icon: Container, label: "Docker", color: "text-blue-500" },
 };
 

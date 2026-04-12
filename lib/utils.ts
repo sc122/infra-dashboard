@@ -31,6 +31,12 @@ export const mgmt = {
     overview: () => `https://console.hetzner.cloud/projects/default/servers`,
     firewall: () => `https://console.hetzner.cloud/projects/default/firewalls`,
   },
+  netlify: {
+    site: (name: string) => `https://app.netlify.com/sites/${name}`,
+    deploys: (name: string) => `https://app.netlify.com/sites/${name}/deploys`,
+    settings: (name: string) => `https://app.netlify.com/sites/${name}/settings/general`,
+    overview: () => `https://app.netlify.com`,
+  },
   github: {
     repo: (org: string, repo: string) => `https://github.com/${org}/${repo}`,
     actions: (org: string, repo: string) => `https://github.com/${org}/${repo}/actions`,
