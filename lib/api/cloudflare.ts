@@ -44,3 +44,28 @@ export async function listWorkers(): Promise<{ id: string; name: string; created
   if (!accountId) throw new Error("CF_ACCOUNT_ID is not set");
   return cfFetch(`/accounts/${accountId}/workers/scripts`);
 }
+
+// Zone analytics
+export interface CFZoneAnalytics {
+  requests: { all: number; cached: number; uncached: number };
+  bandwidth: { all: number; cached: number; uncached: number };
+  threats: { all: number };
+  pageviews: { all: number };
+}
+
+export async function getZoneAnalytics(zoneId: string): Promise<CFZoneAnalytics> {
+  try {
+    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const data = await cfFetch<{ totals: CFZoneAnalytics }>(
+      `/zones/${zoneId}/analytics/dashboard?since=${since}&continuous=true`
+    );
+    return (data as unknown as { totals: CFZoneAnalytics }).totals ?? data as unknown as CFZoneAnalytics;
+  } catch {
+    return {
+      requests: { all: 0, cached: 0, uncached: 0 },
+      bandwidth: { all: 0, cached: 0, uncached: 0 },
+      threats: { all: 0 },
+      pageviews: { all: 0 },
+    };
+  }
+}

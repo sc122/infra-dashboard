@@ -8,6 +8,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { fetchApi } from "@/lib/fetchers";
 import { Globe, HardDrive, Cloud, Shield } from "lucide-react";
+import { MgmtLink } from "@/components/dashboard/mgmt-link";
+import { mgmt } from "@/lib/utils";
 import type { CFZone, CFDNSRecord, CFR2Bucket } from "@/lib/types";
 
 export default function CloudflarePage() {
@@ -112,13 +114,20 @@ export default function CloudflarePage() {
           {zones.map((zone) => (
             <Card key={zone.id} className="mb-4">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Globe className="h-4 w-4" />
-                  {zone.name}
-                  <Badge variant={zone.status === "active" ? "default" : "secondary"}>
-                    {zone.status}
-                  </Badge>
-                </CardTitle>
+                <div className="flex items-center justify-between w-full">
+                  <CardTitle className="flex items-center gap-2">
+                    <Globe className="h-4 w-4" />
+                    {zone.name}
+                    <Badge variant={zone.status === "active" ? "default" : "secondary"}>
+                      {zone.status}
+                    </Badge>
+                  </CardTitle>
+                  <div className="flex items-center gap-2">
+                    <MgmtLink href={mgmt.cloudflare.dns(zone.name)} label="DNS" tooltip="Manage DNS Records" />
+                    <MgmtLink href={mgmt.cloudflare.analytics(zone.name)} label="Analytics" tooltip="Zone Analytics" />
+                    <MgmtLink href={mgmt.cloudflare.zone(zone.name)} label="ניהול" tooltip="Cloudflare Dashboard" />
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
                 <Table>
@@ -169,6 +178,7 @@ export default function CloudflarePage() {
                   <TableRow>
                     <TableHead className="text-right">שם</TableHead>
                     <TableHead className="text-right">תאריך יצירה</TableHead>
+                    <TableHead className="text-right">ניהול</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -177,6 +187,9 @@ export default function CloudflarePage() {
                       <TableCell className="font-medium">{bucket.name}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {new Date(bucket.creation_date).toLocaleDateString("he-IL")}
+                      </TableCell>
+                      <TableCell>
+                        <MgmtLink href={mgmt.cloudflare.r2Bucket(bucket.name)} label="ניהול" tooltip="R2 Bucket Dashboard" />
                       </TableCell>
                     </TableRow>
                   ))}

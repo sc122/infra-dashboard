@@ -1,108 +1,229 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
+import { UsageBar } from "@/components/dashboard/usage-bar";
+import { MgmtLink } from "@/components/dashboard/mgmt-link";
+import { fetchApi } from "@/lib/fetchers";
+import { mgmt } from "@/lib/utils";
+import { DollarSign, Triangle, Cloud, Server, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { DollarSign, Triangle, Cloud, Server } from "lucide-react";
+import type { VercelUsage } from "@/lib/api/vercel";
+import type { CFZone } from "@/lib/types";
 
-// Cost data - will be dynamic once APIs are connected
-const costItems = [
-  {
-    platform: "Vercel",
-    icon: Triangle,
-    plan: "Hobby (Free)",
-    monthlyCost: 0,
-    details: [
-      { item: "Bandwidth", usage: "100 GB/mo included", cost: 0 },
-      { item: "Serverless Functions", usage: "100 GB-Hrs included", cost: 0 },
-      { item: "Builds", usage: "6,000 min/mo included", cost: 0 },
-    ],
-  },
-  {
-    platform: "Cloudflare",
-    icon: Cloud,
-    plan: "Free",
-    monthlyCost: 0,
-    details: [
-      { item: "R2 Storage", usage: "10 GB/mo included", cost: 0 },
-      { item: "R2 Operations", usage: "10M reads/mo included", cost: 0 },
-      { item: "DNS", usage: "Unlimited", cost: 0 },
-    ],
-  },
-  {
-    platform: "Hetzner VPS",
-    icon: Server,
-    plan: "Cloud Server",
-    monthlyCost: 0,
-    details: [
-      { item: "Server", usage: "TBD - connect Hetzner API", cost: 0 },
-      { item: "Bandwidth", usage: "20 TB/mo included", cost: 0 },
-      { item: "Backups", usage: "20% of server price", cost: 0 },
-    ],
-  },
-];
+interface HetznerServerInfo {
+  id: number;
+  name: string;
+  server_type: { name: string; cores: number; memory: number; disk: number; description: string };
+}
+
+// Known Hetzner pricing (EUR/month)
+const HETZNER_PRICES: Record<string, number> = {
+  cx22: 3.29, cx32: 5.39, cx42: 15.59, cx52: 28.19,
+  cx23: 4.51, cx33: 7.59, cx43: 20.79, cx53: 38.59,
+  cpx11: 3.85, cpx21: 7.09, cpx31: 13.09, cpx41: 24.49, cpx51: 47.39,
+  cax11: 3.29, cax21: 5.69, cax31: 9.49, cax41: 17.49,
+};
 
 export default function CostsPage() {
-  const totalMonthlyCost = costItems.reduce((sum, c) => sum + c.monthlyCost, 0);
+  const [loading, setLoading] = useState(true);
+  const [vercelUsage, setVercelUsage] = useState<VercelUsage | null>(null);
+  const [cfZones, setCfZones] = useState<CFZone[]>([]);
+  const [hetznerServers, setHetznerServers] = useState<HetznerServerInfo[]>([]);
+
+  async function loadData() {
+    setLoading(true);
+    try {
+      const [usage, cfData, hetzner] = await Promise.allSettled([
+        fetchApi<VercelUsage>("/api/vercel?action=usage"),
+        fetchApi<{ zones: CFZone[] }>("/api/cloudflare?action=overview"),
+        fetchApi<HetznerServerInfo[]>("/api/hetzner?action=servers"),
+      ]);
+      if (usage.status === "fulfilled") setVercelUsage(usage.value);
+      if (cfData.status === "fulfilled") setCfZones(cfData.value.zones);
+      if (hetzner.status === "fulfilled") setHetznerServers(hetzner.value);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => { loadData(); }, []);
+
+  const hetznerTotal = hetznerServers.reduce((sum, s) => {
+    const price = HETZNER_PRICES[s.server_type?.name?.toLowerCase()] ?? 0;
+    return sum + price;
+  }, 0);
+
+  const totalCost = hetznerTotal; // Vercel Hobby + CF Free = $0
+
+  if (loading) {
+    return (
+      <main className="p-6 space-y-6">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-64 w-full" />
+        <Skeleton className="h-64 w-full" />
+      </main>
+    );
+  }
 
   return (
     <main className="p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">עלויות</h1>
-        <p className="text-muted-foreground">מעקב עלויות חודשי לכל הפלטפורמות</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">עלויות וניצולת</h1>
+          <p className="text-muted-foreground">מעקב עלויות וניצולת משאבים לכל הפלטפורמות</p>
+        </div>
+        <Button variant="outline" size="sm" onClick={loadData}>
+          <RefreshCw className="h-4 w-4 ml-2" />
+          רענון
+        </Button>
       </div>
 
-      {/* Total cost card */}
+      {/* Total */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>עלות חודשית כוללת</CardTitle>
+          <CardTitle>עלות חודשית כוללת (משוערת)</CardTitle>
           <DollarSign className="h-5 w-5 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           <div className="text-4xl font-bold">
-            ${totalMonthlyCost.toFixed(2)}
+            €{hetznerTotal.toFixed(2)}
             <span className="text-sm font-normal text-muted-foreground mr-2">/חודש</span>
           </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            Vercel Hobby (חינם) + Cloudflare Free (חינם) + Hetzner €{hetznerTotal.toFixed(2)}
+          </p>
         </CardContent>
       </Card>
 
-      {/* Per-platform breakdown */}
-      {costItems.map((platform) => (
-        <Card key={platform.platform}>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <platform.icon className="h-4 w-4" />
-                {platform.platform}
-              </CardTitle>
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary">{platform.plan}</Badge>
-                <span className="font-bold">${platform.monthlyCost.toFixed(2)}/mo</span>
-              </div>
+      {/* Vercel */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Triangle className="h-4 w-4" />
+              Vercel
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary">Hobby (Free)</Badge>
+              <MgmtLink href={mgmt.vercel.usage()} label="ניהול" tooltip="Vercel Usage Dashboard" />
             </div>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="text-right">פריט</TableHead>
-                  <TableHead className="text-right">שימוש</TableHead>
-                  <TableHead className="text-right">עלות</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {platform.details.map((d) => (
-                  <TableRow key={d.item}>
-                    <TableCell className="font-medium">{d.item}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{d.usage}</TableCell>
-                    <TableCell className="font-mono">${d.cost.toFixed(2)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      ))}
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {vercelUsage ? (
+            <>
+              <UsageBar
+                label="Bandwidth"
+                used={vercelUsage.bandwidth.used}
+                limit={vercelUsage.bandwidth.limit}
+                unit={vercelUsage.bandwidth.unit}
+                formatUsed={(n) => n.toFixed(2)}
+              />
+              <UsageBar
+                label="Build Minutes"
+                used={vercelUsage.buildMinutes.used}
+                limit={vercelUsage.buildMinutes.limit}
+                unit={vercelUsage.buildMinutes.unit}
+                formatUsed={(n) => n.toFixed(0)}
+              />
+              <UsageBar
+                label="Serverless Function Execution"
+                used={vercelUsage.serverlessFunctions.used}
+                limit={vercelUsage.serverlessFunctions.limit}
+                unit={vercelUsage.serverlessFunctions.unit}
+                formatUsed={(n) => n.toFixed(2)}
+              />
+              <UsageBar
+                label="Source Images (OG)"
+                used={vercelUsage.sourceImages.used}
+                limit={vercelUsage.sourceImages.limit}
+                unit={vercelUsage.sourceImages.unit}
+              />
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">לא הצלחתי לטעון נתוני usage. ייתכן שה-API לא תומך ב-Hobby plan.</p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Cloudflare */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Cloud className="h-4 w-4 text-orange-500" />
+              Cloudflare
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary">
+                {cfZones[0]?.plan?.name ?? "Free"}
+              </Badge>
+              <MgmtLink
+                href={mgmt.cloudflare.zone(cfZones[0]?.name ?? "keepit-ai.com")}
+                label="ניהול"
+                tooltip="Cloudflare Dashboard"
+              />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <UsageBar label="R2 Storage" used={0} limit={10} unit="GB"
+            formatUsed={() => "Free tier"} />
+          <UsageBar label="R2 Class A Operations" used={0} limit={1000000} unit="ops/mo"
+            formatUsed={() => "Free tier"} />
+          <UsageBar label="R2 Class B Operations" used={0} limit={10000000} unit="ops/mo"
+            formatUsed={() => "Free tier"} />
+          <UsageBar label="DNS Queries" used={0} limit={0} unit="Unlimited"
+            formatUsed={() => "Unlimited"} formatLimit={() => "∞"} />
+        </CardContent>
+      </Card>
+
+      {/* Hetzner */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Server className="h-4 w-4 text-red-500" />
+              Hetzner VPS
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary">€{hetznerTotal.toFixed(2)}/mo</Badge>
+              <MgmtLink href={mgmt.hetzner.overview()} label="ניהול" tooltip="Hetzner Console" />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {hetznerServers.map((s) => {
+            const price = HETZNER_PRICES[s.server_type?.name?.toLowerCase()] ?? 0;
+            return (
+              <div key={s.id} className="flex items-center justify-between py-3 border-b last:border-0">
+                <div className="flex items-center gap-3">
+                  <div>
+                    <p className="font-medium">{s.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {s.server_type?.description} &middot; {s.server_type?.cores} cores &middot; {s.server_type?.memory}GB RAM &middot; {s.server_type?.disk}GB disk
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="font-mono font-bold">€{price.toFixed(2)}/mo</span>
+                  <MgmtLink href={mgmt.hetzner.server(s.id)} tooltip="Manage server" iconOnly />
+                </div>
+              </div>
+            );
+          })}
+          <div className="mt-3 space-y-3">
+            <UsageBar label="Bandwidth (included)" used={0} limit={20} unit="TB/mo"
+              formatUsed={() => "Included"} />
+          </div>
+        </CardContent>
+      </Card>
     </main>
   );
 }

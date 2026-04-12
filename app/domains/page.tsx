@@ -5,7 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetchApi } from "@/lib/fetchers";
-import { Globe, ArrowLeft, Server, Triangle, Cloud, ExternalLink } from "lucide-react";
+import { Globe, ArrowLeft, Server, Triangle, Cloud, ExternalLink, Settings } from "lucide-react";
+import { MgmtLink } from "@/components/dashboard/mgmt-link";
+import { mgmt } from "@/lib/utils";
 import type { VercelProject, CFZone, CFDNSRecord, HetznerServer } from "@/lib/types";
 
 interface DomainMapping {
@@ -138,10 +140,13 @@ export default function DomainsPage() {
       {Object.entries(grouped).map(([root, items]) => (
         <Card key={root}>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Globe className="h-5 w-5" />
-              {root}
-            </CardTitle>
+            <div className="flex items-center justify-between w-full">
+              <CardTitle className="flex items-center gap-2">
+                <Globe className="h-5 w-5" />
+                {root}
+              </CardTitle>
+              <MgmtLink href={mgmt.cloudflare.dns(root)} label="ניהול DNS" tooltip="Cloudflare DNS Records" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">

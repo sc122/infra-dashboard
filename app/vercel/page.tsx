@@ -8,7 +8,9 @@ import { StatusBadge } from "@/components/dashboard/status-badge";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetchApi } from "@/lib/fetchers";
-import { ExternalLink, GitBranch } from "lucide-react";
+import { ExternalLink, GitBranch, Settings } from "lucide-react";
+import { MgmtLink } from "@/components/dashboard/mgmt-link";
+import { mgmt } from "@/lib/utils";
 import type { VercelProject } from "@/lib/types";
 
 export default function VercelPage() {
@@ -109,9 +111,12 @@ export default function VercelPage() {
                       ) : "-"}
                     </TableCell>
                     <TableCell>
-                      <Link href={`/vercel/${p.id}`} className="text-xs text-blue-500 hover:underline">
-                        פרטים
-                      </Link>
+                      <div className="flex items-center gap-2">
+                        <Link href={`/vercel/${p.id}`} className="text-xs text-blue-500 hover:underline">
+                          פרטים
+                        </Link>
+                        <MgmtLink href={mgmt.vercel.project(p.name)} tooltip="Vercel Dashboard" iconOnly />
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

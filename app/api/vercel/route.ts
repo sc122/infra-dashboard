@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { listProjects, getProject, listDeployments } from "@/lib/api/vercel";
+import { listProjects, getProject, listDeployments, getUsage } from "@/lib/api/vercel";
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,6 +19,9 @@ export async function GET(request: NextRequest) {
         if (!projectId) return NextResponse.json({ error: "projectId required" }, { status: 400 });
         const limit = parseInt(searchParams.get("limit") ?? "10");
         return NextResponse.json(await listDeployments(projectId, limit));
+
+      case "usage":
+        return NextResponse.json(await getUsage());
 
       default:
         return NextResponse.json({ error: "Unknown action" }, { status: 400 });

@@ -9,7 +9,9 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { fetchApi } from "@/lib/fetchers";
-import { ArrowRight, ExternalLink, GitCommit } from "lucide-react";
+import { ArrowRight, ExternalLink, GitCommit, Settings } from "lucide-react";
+import { MgmtLink } from "@/components/dashboard/mgmt-link";
+import { mgmt } from "@/lib/utils";
 import type { VercelProject, VercelDeployment } from "@/lib/types";
 import Link from "next/link";
 
@@ -74,6 +76,12 @@ export default function VercelProjectPage() {
               </Button>
             </a>
           )}
+          <a href={mgmt.vercel.project(project.name)} target="_blank" rel="noopener noreferrer">
+            <Button variant="outline" size="sm">
+              <Settings className="h-4 w-4 ml-2" />
+              Vercel Dashboard
+            </Button>
+          </a>
         </div>
       </div>
 
@@ -136,14 +144,21 @@ export default function VercelProjectPage() {
                     })}
                   </TableCell>
                   <TableCell>
-                    <a
-                      href={`https://${d.url}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-blue-500 hover:underline"
-                    >
-                      Preview
-                    </a>
+                    <div className="flex items-center gap-2">
+                      <a
+                        href={`https://${d.url}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-blue-500 hover:underline"
+                      >
+                        Preview
+                      </a>
+                      <MgmtLink
+                        href={mgmt.vercel.deployment(project.name, d.uid)}
+                        tooltip="Vercel Deployment"
+                        iconOnly
+                      />
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

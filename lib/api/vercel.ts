@@ -85,3 +85,42 @@ export async function getDomains() {
   );
   return data.domains;
 }
+
+// Usage / billing data
+export interface VercelUsage {
+  bandwidth: { used: number; limit: number; unit: string };
+  buildMinutes: { used: number; limit: number; unit: string };
+  serverlessFunctions: { used: number; limit: number; unit: string };
+  sourceImages: { used: number; limit: number; unit: string };
+}
+
+export async function getUsage(): Promise<VercelUsage> {
+  try {
+    // Try the usage endpoint
+    const data = await vercelFetch<{
+      usage?: {
+        bandwidth?: { value: number };
+        buildExecution?: { value: number };
+        serverlessFunctionExecution?: { value: number };
+        sourceImages?: { value: number };
+      };
+      billing?: { plan?: string };
+    }>("/v6/usage", true);
+
+    const u = data.usage ?? {};
+    return {
+      bandwidth: { used: (u.bandwidth?.value ?? 0) / (1024 * 1024 * 1024), limit: 100, unit: "GB" },
+      buildMinutes: { used: (u.buildExecution?.value ?? 0) / 60, limit: 6000, unit: "min" },
+      serverlessFunctions: { used: (u.serverlessFunctionExecution?.value ?? 0) / 3600, limit: 100, unit: "GB-Hrs" },
+      sourceImages: { used: u.sourceImages?.value ?? 0, limit: 100, unit: "images" },
+    };
+  } catch {
+    // If usage API not available, return zeros
+    return {
+      bandwidth: { used: 0, limit: 100, unit: "GB" },
+      buildMinutes: { used: 0, limit: 6000, unit: "min" },
+      serverlessFunctions: { used: 0, limit: 100, unit: "GB-Hrs" },
+      sourceImages: { used: 0, limit: 100, unit: "images" },
+    };
+  }
+}

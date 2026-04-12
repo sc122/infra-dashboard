@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { listZones, listDNSRecords, listR2Buckets, listWorkers } from "@/lib/api/cloudflare";
+import { listZones, listDNSRecords, listR2Buckets, listWorkers, getZoneAnalytics } from "@/lib/api/cloudflare";
 
 export async function GET(request: NextRequest) {
   try {
@@ -30,6 +30,10 @@ export async function GET(request: NextRequest) {
 
       case "r2":
         return NextResponse.json(await listR2Buckets());
+
+      case "analytics":
+        if (!zoneId) return NextResponse.json({ error: "zoneId required" }, { status: 400 });
+        return NextResponse.json(await getZoneAnalytics(zoneId));
 
       default:
         return NextResponse.json({ error: "Unknown action" }, { status: 400 });
