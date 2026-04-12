@@ -45,10 +45,16 @@ export default function DashboardPage() {
         } catch { /* ignore */ }
       }
 
+      // Fetch deploy targets from repo config files (docker-compose, deploy scripts)
+      let repoDeployTargets: Record<string, string[]> = {};
+      try {
+        repoDeployTargets = await fetchApi<Record<string, string[]>>("/api/github?action=all-deploy-targets");
+      } catch { /* optional enhancement */ }
+
       // Discover all projects automatically
       const input: DiscoveryInput = {
         vercelProjects, dnsRecords, hetznerServers: servers,
-        repos, repoCICD: {}, healthResults,
+        repos, repoCICD: {}, healthResults, repoDeployTargets,
       };
       const discovered = discoverAllProjects(input);
 

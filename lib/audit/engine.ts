@@ -1,5 +1,5 @@
 import type { AuditReport, AuditContext } from "@/lib/types";
-import { listRepos, getRepoCICD } from "@/lib/api/github";
+import { listRepos, getRepoCICD, extractRepoDeployTarget } from "@/lib/api/github";
 import { listProjectsBasic } from "@/lib/api/vercel";
 import { listZones, listDNSRecords } from "@/lib/api/cloudflare";
 import { listServers } from "@/lib/api/hetzner";
@@ -52,6 +52,28 @@ export async function runAudit(): Promise<AuditReport> {
   for (const result of cicdResults) {
     if (result.status === "fulfilled") {
       repoCICD[result.value.name] = result.value.cicd;
+    }
+  }
+
+  // ── Phase 2b: Extract deploy targets from repo config files ──
+  // Only for repos with Dockerfiles (they're deployed on VPS)
+  const repoDeployTargets: Record<string, string[]> = {};
+  const dockerRepos = Object.entries(repoCICD)
+    .filter(([, c]) => c.hasDockerfile)
+    .map(([name]) => name);
+
+  const targetResults = await Promise.allSettled(
+    dockerRepos.slice(0, 10).map(async (name) => {
+      const repo = repos.find((r) => r.name === name);
+      if (!repo) return { name, targets: [] };
+      const [owner, repoName] = repo.full_name.split("/");
+      const targets = await extractRepoDeployTarget(owner, repoName);
+      return { name, targets };
+    })
+  );
+  for (const result of targetResults) {
+    if (result.status === "fulfilled" && result.value.targets.length > 0) {
+      repoDeployTargets[result.value.name] = result.value.targets;
     }
   }
 

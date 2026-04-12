@@ -81,6 +81,8 @@ export interface DiscoveryInput {
     lastRun?: GitHubWorkflowRun;
   }>;
   healthResults: HealthCheck[];
+  /** Repo → domains found inside repo config files (docker-compose, deploy scripts) */
+  repoDeployTargets?: Record<string, string[]>;
 }
 
 // ─── Main Discovery Function ──────────────────────────────────
@@ -166,8 +168,8 @@ export function discoverAllProjects(input: DiscoveryInput): Project[] {
 
     const subdomain = dns.name.split(".")[0];
 
-    // Try to match repos
-    const matchedRepos = findMatchingRepos(subdomain, input.repos, input.repoCICD);
+    // Try to match repos (name match + deploy target match)
+    const matchedRepos = findMatchingRepos(subdomain, dns.name, input.repos, input.repoCICD, input.repoDeployTargets);
 
     // Health
     const health = input.healthResults.find((h) => h.url?.includes(dns.name));
@@ -220,43 +222,56 @@ export function discoverAllProjects(input: DiscoveryInput): Project[] {
 
 // ─── Helpers ──────────────────────────────────────────────────
 
-/** Find repos that match a subdomain name */
+/** Find repos that match a subdomain using multiple strategies */
 function findMatchingRepos(
   subdomain: string,
+  fullDomain: string,
   repos: GitHubRepo[],
-  repoCICD: DiscoveryInput["repoCICD"]
+  repoCICD: DiscoveryInput["repoCICD"],
+  repoDeployTargets?: Record<string, string[]>
 ): GitHubRepo[] {
   const subClean = subdomain.toLowerCase().replace(/[-_]/g, "");
   const matches: GitHubRepo[] = [];
+  const matchedNames = new Set<string>();
 
-  for (const repo of repos) {
-    const repoClean = repo.name.toLowerCase().replace(/[-_]/g, "");
-
-    // Exact match
-    if (repoClean === subClean) {
-      matches.push(repo);
-      continue;
-    }
-
-    // Contained match (min 4 chars to avoid false positives)
-    if (subClean.length >= 4 && repoClean.includes(subClean)) {
-      matches.push(repo);
-      continue;
-    }
-    if (repoClean.length >= 4 && subClean.includes(repoClean)) {
-      matches.push(repo);
-      continue;
+  // Strategy 1: Repo deploy targets (docker-compose, deploy scripts mentioning this domain)
+  if (repoDeployTargets) {
+    for (const [repoName, targets] of Object.entries(repoDeployTargets)) {
+      const domainMatch = targets.some((t) =>
+        t.includes(fullDomain) || t.includes(subdomain)
+      );
+      if (domainMatch) {
+        const repo = repos.find((r) => r.name === repoName);
+        if (repo && !matchedNames.has(repo.name)) {
+          matches.push(repo);
+          matchedNames.add(repo.name);
+        }
+      }
     }
   }
+  if (matches.length > 0) return matches;
 
-  // If no match found, try Docker-specific repos (repos with Dockerfile)
-  if (matches.length === 0) {
-    for (const repo of repos) {
-      if (!repoCICD[repo.name]?.hasDockerfile) continue;
-      const repoClean = repo.name.toLowerCase().replace(/[-_]/g, "");
-      if (subClean.length >= 3 && repoClean.includes(subClean)) {
-        matches.push(repo);
-      }
+  // Strategy 2: Exact or contained name match
+  for (const repo of repos) {
+    const repoClean = repo.name.toLowerCase().replace(/[-_]/g, "");
+    if (repoClean === subClean) {
+      matches.push(repo); matchedNames.add(repo.name); continue;
+    }
+    if (subClean.length >= 4 && repoClean.includes(subClean)) {
+      matches.push(repo); matchedNames.add(repo.name); continue;
+    }
+    if (repoClean.length >= 4 && subClean.includes(repoClean)) {
+      matches.push(repo); matchedNames.add(repo.name); continue;
+    }
+  }
+  if (matches.length > 0) return matches;
+
+  // Strategy 3: Docker repos fuzzy match
+  for (const repo of repos) {
+    if (!repoCICD[repo.name]?.hasDockerfile) continue;
+    const repoClean = repo.name.toLowerCase().replace(/[-_]/g, "");
+    if (subClean.length >= 3 && repoClean.includes(subClean)) {
+      if (!matchedNames.has(repo.name)) matches.push(repo);
     }
   }
 
