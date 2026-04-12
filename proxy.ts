@@ -19,20 +19,7 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Check for password in query param (login)
-  const passwordParam = request.nextUrl.searchParams.get("password");
-  if (passwordParam === password) {
-    const response = NextResponse.redirect(new URL(request.nextUrl.pathname, request.url));
-    response.cookies.set("infra-auth", password, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "strict",
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-    });
-    return response;
-  }
-
-  // Return login page
+  // Return login page (uses JS POST to handle special chars in passwords)
   return new NextResponse(
     `<!DOCTYPE html>
 <html lang="he" dir="rtl">
@@ -45,16 +32,31 @@ export function proxy(request: NextRequest) {
   input{width:100%;padding:0.625rem;border:1px solid #27272a;border-radius:8px;background:#09090b;color:#fafafa;font-size:0.875rem;box-sizing:border-box}
   button{width:100%;padding:0.625rem;border:none;border-radius:8px;background:#fafafa;color:#09090b;font-weight:600;cursor:pointer;margin-top:0.75rem;font-size:0.875rem}
   button:hover{background:#e4e4e7}
+  .err{color:#f87171;font-size:0.8rem;margin-top:0.5rem;display:none}
 </style></head>
 <body>
   <div class="card">
     <h1>Infra Dashboard</h1>
     <p>הזן סיסמה כדי להיכנס</p>
-    <form method="GET">
-      <input type="password" name="password" placeholder="סיסמה" autofocus required />
-      <button type="submit">כניסה</button>
+    <form id="f" onsubmit="return login(event)">
+      <input type="password" id="pw" placeholder="סיסמה" autofocus required />
+      <button type="submit" id="btn">כניסה</button>
+      <div class="err" id="err"></div>
     </form>
   </div>
+  <script>
+    async function login(e){
+      e.preventDefault();
+      var b=document.getElementById('btn'),err=document.getElementById('err');
+      b.textContent='...';err.style.display='none';
+      try{
+        var r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:document.getElementById('pw').value})});
+        if(r.ok){window.location.reload();}
+        else{var d=await r.json();err.textContent=d.error||'שגיאה';err.style.display='block';}
+      }catch(x){err.textContent='שגיאת רשת';err.style.display='block';}
+      b.textContent='כניסה';
+    }
+  </script>
 </body></html>`,
     { status: 401, headers: { "Content-Type": "text/html; charset=utf-8" } }
   );
