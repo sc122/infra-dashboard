@@ -32,6 +32,14 @@ function getDeployedRepoNames(ctx: AuditContext): Set<string> {
     healthResults: ctx.healthResults,
     repoDeployTargets: ctx.repoDeployTargets,
   });
+  // Netlify-linked repos
+  for (const site of ctx.netlifySites ?? []) {
+    const repoUrl = site.build_settings?.repo_url;
+    if (repoUrl) {
+      const repoName = repoUrl.split("/").pop()?.replace(/\.git$/, "");
+      if (repoName) discovered.add(repoName.toLowerCase());
+    }
+  }
   // Also include repos with Dockerfile/vercel.json from CI/CD scan
   for (const [name, cicd] of Object.entries(ctx.repoCICD)) {
     if (cicd.hasDockerfile || cicd.hasVercelConfig) discovered.add(name.toLowerCase());

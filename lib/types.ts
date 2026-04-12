@@ -215,6 +215,7 @@ export interface AuditContext {
   repos: GitHubRepo[];
   repoCICD: Record<string, { hasActions: boolean; hasDockerfile: boolean; hasVercelConfig: boolean; lastRun?: GitHubWorkflowRun }>;
   vercelProjects: VercelProject[];
+  netlifySites: Array<{ id: string; name: string; build_settings?: { repo_url?: string }; custom_domain: string | null; published_deploy?: { state: string } }>;
   cfZones: CFZone[];
   dnsRecords: CFDNSRecord[];
   hetznerServers: HetznerServer[];

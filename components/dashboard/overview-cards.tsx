@@ -1,10 +1,11 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Triangle, Cloud, Server, Container, Activity } from "lucide-react";
+import { Triangle, Cloud, Server, Container, Activity, Hexagon } from "lucide-react";
 
 export interface PlatformSummary {
   vercelProjects: number;
+  netlifyProjects: number;
   cloudflareZones: number;
   cloudflareBuckets: number;
   hetznerServers: number;
@@ -21,6 +22,13 @@ export function OverviewCards({ data }: { data: PlatformSummary }) {
       value: `${data.vercelProjects} פרויקטים`,
       description: "Next.js & Static sites",
       color: "text-black dark:text-white",
+    },
+    {
+      title: "Netlify",
+      icon: Hexagon,
+      value: `${data.netlifyProjects} sites`,
+      description: "Static & JAMstack",
+      color: "text-teal-500",
     },
     {
       title: "Docker / VPS",

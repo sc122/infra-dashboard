@@ -3,17 +3,19 @@ import { listRepos, getRepoCICD, extractRepoDeployTarget } from "@/lib/api/githu
 import { listProjectsBasic } from "@/lib/api/vercel";
 import { listZones, listDNSRecords } from "@/lib/api/cloudflare";
 import { listServers } from "@/lib/api/hetzner";
+import { listSites } from "@/lib/api/netlify";
 import { allRules } from "./rules";
 
 export async function runAudit(): Promise<AuditReport> {
   // ── Phase 1: Gather platform data ──
-  const [reposResult, vercelResult, zonesResult, hetznerResult, healthResult] =
+  const [reposResult, vercelResult, zonesResult, hetznerResult, healthResult, netlifyResult] =
     await Promise.allSettled([
       listRepos(),
       listProjectsBasic(),
       listZones(),
       listServers(),
       fetchHealthData(),
+      listSites(),
     ]);
 
   const repos = reposResult.status === "fulfilled" ? reposResult.value : [];
@@ -21,6 +23,7 @@ export async function runAudit(): Promise<AuditReport> {
   const cfZones = zonesResult.status === "fulfilled" ? zonesResult.value : [];
   const hetznerServers = hetznerResult.status === "fulfilled" ? hetznerResult.value : [];
   const healthResults = healthResult.status === "fulfilled" ? healthResult.value : [];
+  const netlifySites = netlifyResult.status === "fulfilled" ? netlifyResult.value : [];
 
   // Track data source health
   const dataSources = {
@@ -29,6 +32,7 @@ export async function runAudit(): Promise<AuditReport> {
     cloudflare: { ok: zonesResult.status === "fulfilled", count: cfZones.length },
     hetzner: { ok: hetznerResult.status === "fulfilled", count: hetznerServers.length },
     health: { ok: healthResult.status === "fulfilled", count: healthResults.length },
+    netlify: { ok: netlifyResult.status === "fulfilled", count: netlifySites.length },
   };
 
   // ── Phase 1b: DNS records for all zones ──
@@ -79,7 +83,7 @@ export async function runAudit(): Promise<AuditReport> {
 
   // ── Phase 3: Run rules ──
   const ctx: AuditContext = {
-    repos, repoCICD, vercelProjects, cfZones, dnsRecords, hetznerServers, healthResults,
+    repos, repoCICD, vercelProjects, netlifySites, cfZones, dnsRecords, hetznerServers, healthResults,
     repoDeployTargets,
   };
 

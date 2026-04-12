@@ -7,10 +7,11 @@ import { UsageBar } from "@/components/dashboard/usage-bar";
 import { MgmtLink } from "@/components/dashboard/mgmt-link";
 import { fetchApi } from "@/lib/fetchers";
 import { mgmt } from "@/lib/utils";
-import { DollarSign, Triangle, Cloud, Server, RefreshCw } from "lucide-react";
+import { DollarSign, Triangle, Cloud, Server, Hexagon, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { VercelUsage } from "@/lib/api/vercel";
+import type { NetlifySite } from "@/lib/api/netlify";
 import type { CFZone } from "@/lib/types";
 
 interface HetznerServerInfo {
@@ -32,18 +33,21 @@ export default function CostsPage() {
   const [vercelUsage, setVercelUsage] = useState<VercelUsage | null>(null);
   const [cfZones, setCfZones] = useState<CFZone[]>([]);
   const [hetznerServers, setHetznerServers] = useState<HetznerServerInfo[]>([]);
+  const [netlifySites, setNetlifySites] = useState<NetlifySite[]>([]);
 
   async function loadData() {
     setLoading(true);
     try {
-      const [usage, cfData, hetzner] = await Promise.allSettled([
+      const [usage, cfData, hetzner, netlify] = await Promise.allSettled([
         fetchApi<VercelUsage>("/api/vercel?action=usage"),
         fetchApi<{ zones: CFZone[] }>("/api/cloudflare?action=overview"),
         fetchApi<HetznerServerInfo[]>("/api/hetzner?action=servers"),
+        fetchApi<NetlifySite[]>("/api/netlify?action=sites"),
       ]);
       if (usage.status === "fulfilled") setVercelUsage(usage.value);
       if (cfData.status === "fulfilled") setCfZones(cfData.value.zones);
       if (hetzner.status === "fulfilled") setHetznerServers(hetzner.value);
+      if (netlify.status === "fulfilled") setNetlifySites(netlify.value);
     } catch (err) {
       console.error(err);
     } finally {
@@ -96,7 +100,7 @@ export default function CostsPage() {
             <span className="text-sm font-normal text-muted-foreground mr-2">/חודש</span>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Vercel Hobby (חינם) + Cloudflare Free (חינם) + Hetzner €{hetznerTotal.toFixed(2)}
+            Vercel Hobby (חינם) + Netlify Free (חינם) + Cloudflare Free (חינם) + Hetzner €{hetznerTotal.toFixed(2)}
           </p>
         </CardContent>
       </Card>
@@ -149,6 +153,31 @@ export default function CostsPage() {
           ) : (
             <p className="text-sm text-muted-foreground">לא הצלחתי לטעון נתוני usage. ייתכן שה-API לא תומך ב-Hobby plan.</p>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Netlify */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Hexagon className="h-4 w-4 text-teal-500" />
+              Netlify
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary">Free ({netlifySites.length} sites)</Badge>
+              <MgmtLink href={mgmt.netlify.overview()} label="ניהול" tooltip="Netlify Dashboard" />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <UsageBar label="Bandwidth" used={0} limit={100} unit="GB/mo" formatUsed={() => "Free tier"} />
+          <UsageBar label="Build Minutes" used={0} limit={300} unit="min/mo" formatUsed={() => "Free tier"} />
+          <UsageBar label="Concurrent Builds" used={0} limit={1} unit="" formatUsed={() => "1 (Free)"} />
+          <UsageBar label="Serverless Functions" used={0} limit={125000} unit="req/mo" formatUsed={() => "Free tier"} />
+          <div className="text-xs text-muted-foreground">
+            {netlifySites.filter((s) => s.build_settings?.repo_url).length} sites עם repo מקושר · {netlifySites.filter((s) => !s.build_settings?.repo_url).length} manual deploys
+          </div>
         </CardContent>
       </Card>
 

@@ -1,5 +1,6 @@
 import { listProjectsBasic } from "@/lib/api/vercel";
 import { listZones, listDNSRecords } from "@/lib/api/cloudflare";
+import { listSites } from "@/lib/api/netlify";
 import type { HealthCheck } from "@/lib/types";
 
 async function checkEndpoint(name: string, url: string, platform: string): Promise<HealthCheck> {
@@ -40,6 +41,15 @@ export async function runHealthChecks(): Promise<HealthCheck[]> {
         ? `https://${p.latestDeployment.url}`
         : `https://${p.name}.vercel.app`;
       endpoints.push({ name: p.name, url, platform: "vercel" });
+    }
+  } catch { /* not configured */ }
+
+  // Netlify sites
+  try {
+    const sites = await listSites();
+    for (const s of sites) {
+      const url = s.ssl_url || `https://${s.name}.netlify.app`;
+      endpoints.push({ name: s.name, url, platform: "netlify" });
     }
   } catch { /* not configured */ }
 

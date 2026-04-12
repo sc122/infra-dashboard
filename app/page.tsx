@@ -18,7 +18,7 @@ export default function DashboardPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [filters, setFilters] = useState<Filters>({ platform: null, status: null, tier: null, search: "" });
   const [summary, setSummary] = useState<PlatformSummary>({
-    vercelProjects: 0, cloudflareZones: 0, cloudflareBuckets: 0,
+    vercelProjects: 0, netlifyProjects: 0, cloudflareZones: 0, cloudflareBuckets: 0,
     hetznerServers: 0, healthUp: 0, healthDown: 0, healthTotal: 0,
   });
 
@@ -58,6 +58,7 @@ export default function DashboardPage() {
       setProjects(discovered);
       setSummary({
         vercelProjects: discovered.filter((p) => p.hosting.platform === "vercel").length,
+        netlifyProjects: discovered.filter((p) => p.hosting.platform === "netlify").length,
         cloudflareZones: cfZones.length,
         cloudflareBuckets: cfData.status === "fulfilled" ? cfData.value.r2Buckets.length : 0,
         hetznerServers: servers.length,
