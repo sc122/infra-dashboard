@@ -24,7 +24,7 @@ async function ghFetch<T>(path: string): Promise<T> {
 export async function listRepos(): Promise<GitHubRepo[]> {
   // Get user repos (owned, not forks, sorted by push date)
   const repos = await ghFetch<GitHubRepo[]>(
-    "/user/repos?type=owner&sort=pushed&per_page=100&affiliation=owner"
+    "/user/repos?type=owner&sort=pushed&per_page=100"
   );
   return repos.filter((r) => !r.fork);
 }
