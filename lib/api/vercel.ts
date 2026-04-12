@@ -3,9 +3,9 @@ import type { VercelProject, VercelDeployment } from "@/lib/types";
 const VERCEL_API = "https://api.vercel.com";
 
 async function vercelFetch<T>(path: string): Promise<T> {
-  const token = process.env.VERCEL_TOKEN;
+  const token = process.env.MY_VERCEL_TOKEN;
   const teamId = process.env.VERCEL_TEAM_ID;
-  if (!token) throw new Error("VERCEL_TOKEN is not set");
+  if (!token) throw new Error("MY_VERCEL_TOKEN is not set");
 
   const separator = path.includes("?") ? "&" : "?";
   const url = `${VERCEL_API}${path}${teamId ? `${separator}teamId=${teamId}` : ""}`;
