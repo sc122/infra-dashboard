@@ -41,15 +41,17 @@ export async function GET() {
     // Build list of endpoints to check
     const endpoints: { name: string; url: string; platform: string }[] = [];
 
-    // Vercel projects
+    // Vercel projects - pick stable domain (not deployment-specific)
     try {
       const projects = await listProjects();
       for (const p of projects) {
-        const domain = p.domains?.[0];
-        if (domain) {
+        // Prefer custom domain, then project.vercel.app, skip deployment-specific URLs
+        const stableDomain = p.domains?.find((d: string) => !d.includes("-sc122s-projects") && !d.includes("-git-"))
+          ?? p.domains?.[0];
+        if (stableDomain) {
           endpoints.push({
             name: p.name,
-            url: `https://${domain}`,
+            url: `https://${stableDomain}`,
             platform: "vercel",
           });
         }
