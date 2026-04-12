@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { OverviewCards, type PlatformSummary } from "@/components/dashboard/overview-cards";
-import { UnifiedTable } from "@/components/dashboard/unified-table";
+import { UnifiedTable, classifyProject } from "@/components/dashboard/unified-table";
+import { FilterBar, type Filters } from "@/components/dashboard/filter-bar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetchApi } from "@/lib/fetchers";
@@ -15,6 +16,7 @@ import { Button } from "@/components/ui/button";
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [filters, setFilters] = useState<Filters>({ platform: null, status: null, tier: null, search: "" });
   const [summary, setSummary] = useState<PlatformSummary>({
     vercelProjects: 0, cloudflareZones: 0, cloudflareBuckets: 0,
     hetznerServers: 0, healthUp: 0, healthDown: 0, healthTotal: 0,
@@ -23,7 +25,6 @@ export default function DashboardPage() {
   async function loadData() {
     setLoading(true);
     try {
-      // Fetch all data sources in parallel
       const [vercelData, cfData, hetznerData, healthData, githubData, netlifyData] = await Promise.allSettled([
         fetchApi<VercelProject[]>("/api/vercel?action=projects"),
         fetchApi<{ zones: CFZone[]; r2Buckets: unknown[] }>("/api/cloudflare?action=overview"),
@@ -40,21 +41,14 @@ export default function DashboardPage() {
       const healthResults = healthData.status === "fulfilled" ? healthData.value.results ?? [] : [];
       const repos = githubData.status === "fulfilled" ? githubData.value : [];
 
-      // Fetch DNS records
       let dnsRecords: CFDNSRecord[] = [];
       if (cfZones.length > 0) {
-        try {
-          dnsRecords = await fetchApi<CFDNSRecord[]>(`/api/cloudflare?action=dns&zoneId=${cfZones[0].id}`);
-        } catch { /* ignore */ }
+        try { dnsRecords = await fetchApi<CFDNSRecord[]>(`/api/cloudflare?action=dns&zoneId=${cfZones[0].id}`); } catch {}
       }
 
-      // Fetch deploy targets from repo config files (docker-compose, deploy scripts)
       let repoDeployTargets: Record<string, string[]> = {};
-      try {
-        repoDeployTargets = await fetchApi<Record<string, string[]>>("/api/github?action=all-deploy-targets");
-      } catch { /* optional enhancement */ }
+      try { repoDeployTargets = await fetchApi<Record<string, string[]>>("/api/github?action=all-deploy-targets"); } catch {}
 
-      // Discover all projects automatically
       const input: DiscoveryInput = {
         vercelProjects, netlifySites, dnsRecords, hetznerServers: servers,
         repos, repoCICD: {}, healthResults, repoDeployTargets,
@@ -72,13 +66,48 @@ export default function DashboardPage() {
         healthTotal: discovered.length,
       });
     } catch (err) {
-      console.error("Failed to load dashboard data:", err);
+      console.error("Failed to load:", err);
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => { loadData(); }, []);
+
+  // Apply filters
+  const filtered = useMemo(() => {
+    return projects.filter((p) => {
+      if (filters.platform && p.hosting.platform !== filters.platform) return false;
+      if (filters.status) {
+        const isUp = p.status === "up" || p.status === "protected";
+        if (filters.status === "up" && !isUp) return false;
+        if (filters.status === "down" && p.status !== "down") return false;
+      }
+      if (filters.tier && classifyProject(p) !== filters.tier) return false;
+      if (filters.search) {
+        const q = filters.search.toLowerCase();
+        const match = p.name.toLowerCase().includes(q) ||
+          p.domain.toLowerCase().includes(q) ||
+          p.repos.some((r) => r.name.toLowerCase().includes(q));
+        if (!match) return false;
+      }
+      return true;
+    });
+  }, [projects, filters]);
+
+  // Counts for filter bar
+  const counts = useMemo(() => {
+    const platforms: Record<string, number> = {};
+    let production = 0, active = 0, inactive = 0;
+    for (const p of projects) {
+      platforms[p.hosting.platform] = (platforms[p.hosting.platform] ?? 0) + 1;
+      const tier = classifyProject(p);
+      if (tier === "production") production++;
+      else if (tier === "active") active++;
+      else inactive++;
+    }
+    return { total: projects.length, production, active, inactive, platforms };
+  }, [projects]);
 
   return (
     <main className="p-6 space-y-6">
@@ -109,18 +138,24 @@ export default function DashboardPage() {
       )}
 
       <Card>
-        <CardHeader>
+        <CardHeader className="pb-2">
           <CardTitle>כל הפרויקטים</CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
             <div className="space-y-3">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <Skeleton key={i} className="h-12 w-full" />
-              ))}
+              {[1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-12 w-full" />)}
             </div>
           ) : (
-            <UnifiedTable projects={projects} />
+            <>
+              <FilterBar filters={filters} onChange={setFilters} counts={counts} />
+              <UnifiedTable projects={filtered} />
+              {filtered.length === 0 && projects.length > 0 && (
+                <p className="text-center text-sm text-muted-foreground py-8">
+                  אין תוצאות לפילטרים הנוכחיים
+                </p>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
