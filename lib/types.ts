@@ -200,6 +200,15 @@ export interface AuditReport {
   score: number;
   findings: AuditFinding[];
   summary: { critical: number; warning: number; info: number; total: number };
+  dataSources: {
+    github: { ok: boolean; count: number };
+    vercel: { ok: boolean; count: number };
+    cloudflare: { ok: boolean; count: number };
+    hetzner: { ok: boolean; count: number };
+    health: { ok: boolean; count: number };
+  };
+  rulesRun: number;
+  ruleErrors: string[];
 }
 
 export interface AuditContext {

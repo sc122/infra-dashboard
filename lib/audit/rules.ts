@@ -10,32 +10,43 @@ export type AuditRule = {
 
 // ─── HELPERS ──────────────────────────────────────────────────────
 
-function daysSince(date: string): number {
-  return Math.floor((Date.now() - new Date(date).getTime()) / (24 * 60 * 60 * 1000));
+function daysSince(date: string | number): number {
+  const ts = typeof date === "number" ? date : new Date(date).getTime();
+  return Math.floor((Date.now() - ts) / (24 * 60 * 60 * 1000));
+}
+
+function safeId(s: string): string {
+  return s.replace(/[^a-zA-Z0-9_-]/g, "_").toLowerCase();
 }
 
 /** Build set of repo names that are deployed somewhere */
 function getDeployedRepoNames(ctx: AuditContext): Set<string> {
   const deployed = new Set<string>();
-  // Vercel-linked repos
   for (const p of ctx.vercelProjects) {
     if (p.link?.repo) deployed.add(p.link.repo.toLowerCase());
   }
-  // Repos with Docker (likely on VPS)
   for (const [name, cicd] of Object.entries(ctx.repoCICD)) {
     if (cicd.hasDockerfile || cicd.hasVercelConfig) deployed.add(name.toLowerCase());
   }
   return deployed;
 }
 
-/** Build mapping of DNS A records pointing to known VPS IPs */
-function getDnsToVpsMap(ctx: AuditContext) {
+/** Get DNS A records pointing to known VPS IPs */
+function getDnsToVpsRecords(ctx: AuditContext) {
   const vpsIPs = new Set(
     ctx.hetznerServers.map((s) => s.public_net?.ipv4?.ip).filter(Boolean)
   );
-  return ctx.dnsRecords.filter(
-    (r) => r.type === "A" && vpsIPs.has(r.content)
-  );
+  return ctx.dnsRecords.filter((r) => r.type === "A" && vpsIPs.has(r.content));
+}
+
+/** Strict match: does this subdomain clearly match a repo name? */
+function strictSubdomainMatch(subdomain: string, repoName: string): boolean {
+  const sub = subdomain.toLowerCase();
+  const repo = repoName.toLowerCase().replace(/[_-]/g, "");
+  const subClean = sub.replace(/[_-]/g, "");
+  // Exact match or one contains the other fully (min 4 chars to avoid "a" matching everything)
+  if (sub.length < 4 && repo.length < 4) return sub === repo;
+  return subClean === repo || (subClean.length >= 4 && repo.includes(subClean)) || (repo.length >= 4 && subClean.includes(repo));
 }
 
 // ─── SECURITY ─────────────────────────────────────────────────────
@@ -51,31 +62,30 @@ export const publicRepos: AuditRule = {
     for (const repo of ctx.repos) {
       if (repo.private) continue;
 
-      // Check if this public repo is related to any deployed project
-      const isDeployed = deployed.has(repo.name.toLowerCase());
-      // Also check if name matches a Vercel project
-      const matchesVercel = ctx.vercelProjects.some(
-        (p) => p.name.toLowerCase().includes(repo.name.toLowerCase())
+      // STRICT match: exact repo name linked to Vercel
+      const isLinkedToVercel = ctx.vercelProjects.some(
+        (p) => p.link?.repo?.toLowerCase() === repo.name.toLowerCase()
       );
+      const isDeployed = deployed.has(repo.name.toLowerCase());
 
-      if (isDeployed || matchesVercel) {
+      if (isLinkedToVercel || isDeployed) {
         findings.push({
-          id: `pub-deployed-${repo.name}`,
+          id: `pub-deployed-${safeId(repo.name)}`,
           category: "security",
           severity: "critical",
           title: `Repo ציבורי עם קוד production: ${repo.name}`,
-          description: `${repo.full_name} הוא public אבל מחובר ל-deployment חי. קוד production חשוף.`,
+          description: `${repo.full_name} הוא public ומחובר ל-deployment חי. קוד production חשוף.`,
           resource: { type: "github-repo", name: repo.full_name, platform: "github", url: repo.html_url },
           recommendation: `GitHub → ${repo.full_name} → Settings → Danger Zone → Make private`,
           autoFixable: false,
         });
       } else if (daysSince(repo.pushed_at) > 180) {
         findings.push({
-          id: `pub-stale-${repo.name}`,
+          id: `pub-stale-${safeId(repo.name)}`,
           category: "security",
           severity: "info",
           title: `Repo ציבורי לא פעיל: ${repo.name}`,
-          description: `${repo.full_name} ציבורי ולא עודכן ${daysSince(repo.pushed_at)} ימים. ודא שאין בו secrets ב-commit history.`,
+          description: `${repo.full_name} ציבורי ולא עודכן ${daysSince(repo.pushed_at)} ימים. ודא שאין secrets ב-commit history.`,
           resource: { type: "github-repo", name: repo.full_name, platform: "github", url: repo.html_url },
           recommendation: `הפוך ל-Private או ארכב`,
           autoFixable: false,
@@ -93,36 +103,36 @@ export const serverSecurity: AuditRule = {
   run(ctx) {
     const findings: AuditFinding[] = [];
     for (const server of ctx.hetznerServers) {
-      // Check backups via rescue_enabled or protection fields
-      const hasProtection = (server as unknown as Record<string, unknown>).protection as
+      const protection = (server as unknown as Record<string, unknown>).protection as
         | { delete: boolean; rebuild: boolean }
         | undefined;
-      if (!hasProtection?.delete) {
+
+      if (!protection?.delete) {
         findings.push({
-          id: `no-delete-protect-${server.id}`,
+          id: `no-protect-${server.id}`,
           category: "security",
           severity: "warning",
           title: `${server.name} - אין Delete Protection`,
-          description: `שרת ${server.name} ניתן למחיקה ללא הגנה. הפעל delete protection כדי למנוע מחיקה בטעות.`,
+          description: `ניתן למחיקה ללא הגנה. הפעל delete protection למניעת מחיקה בטעות.`,
           resource: { type: "hetzner-server", name: server.name, platform: "hetzner", url: mgmt.hetzner.server(server.id) },
-          recommendation: `Hetzner Console → ${server.name} → Networking → Enable delete protection`,
+          recommendation: `Hetzner Console → ${server.name} → Enable delete protection`,
           autoFixable: false,
         });
       }
 
-      // Check if server has many Docker services running (based on DNS records pointing to it)
-      const vpsRecords = getDnsToVpsMap(ctx).filter(
+      // Count services per server
+      const serviceCount = getDnsToVpsRecords(ctx).filter(
         (r) => r.content === server.public_net?.ipv4?.ip
-      );
-      if (vpsRecords.length >= 5) {
+      ).length;
+      if (serviceCount >= 5) {
         findings.push({
           id: `many-services-${server.id}`,
           category: "security",
           severity: "info",
-          title: `${server.name} מריץ ${vpsRecords.length} שירותים`,
-          description: `${vpsRecords.length} DNS records מצביעים לשרת זה. ודא שכל השירותים עדכניים ומאובטחים.`,
+          title: `${server.name} מריץ ${serviceCount} שירותים`,
+          description: `${serviceCount} DNS records → שרת זה. ודא שכל השירותים מעודכנים ומאובטחים.`,
           resource: { type: "hetzner-server", name: server.name, platform: "hetzner", url: mgmt.hetzner.server(server.id) },
-          recommendation: `בדוק תקינות כל container וודא שאין services מיותרים`,
+          recommendation: `סרוק docker ps וודא שאין containers מיותרים`,
           autoFixable: false,
         });
       }
@@ -151,13 +161,13 @@ export const duplicateProjects: AuditRule = {
     for (const [repo, projects] of repoToProjects) {
       if (projects.length > 1) {
         findings.push({
-          id: `dup-${repo}`,
+          id: `dup-${safeId(repo)}`,
           category: "deployment",
           severity: "warning",
-          title: `כפילות: ${projects.length} Vercel projects מ-repo "${repo}"`,
-          description: `${projects.join(", ")} מחוברים לאותו repo. כל push → ${projects.length} builds כפולים, בזבוז build minutes.`,
-          resource: { type: "vercel-project", name: projects.slice(1).join(", "), platform: "vercel", url: mgmt.vercel.project(projects[1]) },
-          recommendation: `מחק את "${projects[1]}" ב-Vercel Dashboard`,
+          title: `כפילות: ${projects.length} Vercel projects ← "${repo}"`,
+          description: `${projects.join(", ")} מחוברים לאותו repo. כל push = ${projects.length} builds כפולים.`,
+          resource: { type: "vercel-project", name: projects[1], platform: "vercel", url: mgmt.vercel.project(projects[1]) },
+          recommendation: `מחק "${projects[1]}" ב-Vercel Dashboard`,
           autoFixable: false,
         });
       }
@@ -175,11 +185,11 @@ export const noRepoLinked: AuditRule = {
     for (const p of ctx.vercelProjects) {
       if (!p.link?.repo) {
         findings.push({
-          id: `no-repo-${p.name}`,
+          id: `no-repo-${safeId(p.name)}`,
           category: "deployment",
           severity: "warning",
           title: `"${p.name}" ללא GitHub repo`,
-          description: `Deploy ידני בלבד. אין PR previews, rollback קשה, אין version control.`,
+          description: `Deploy ידני בלבד. אין PR previews, אין rollback קל, אין version history.`,
           resource: { type: "vercel-project", name: p.name, platform: "vercel", url: mgmt.vercel.project(p.name) },
           recommendation: `צור repo ב-GitHub → חבר ב-Vercel Settings → Git`,
           autoFixable: false,
@@ -192,59 +202,49 @@ export const noRepoLinked: AuditRule = {
 
 export const dnsIntegrity: AuditRule = {
   id: "dns-integrity",
-  name: "תקינות DNS records",
+  name: "תקינות DNS",
   category: "deployment",
   run(ctx) {
     const findings: AuditFinding[] = [];
-    const vpsRecords = getDnsToVpsMap(ctx);
+    const vpsRecords = getDnsToVpsRecords(ctx);
 
     for (const record of vpsRecords) {
-      // Skip root domain and www (they're redirects)
       const rootDomain = record.name.split(".").slice(-2).join(".");
+      // Skip root and www (known redirects)
       if (record.name === rootDomain || record.name === `www.${rootDomain}`) continue;
 
-      // Check health
-      const health = ctx.healthResults.find((h) => h.url?.includes(record.name));
+      const subdomain = record.name.split(".")[0];
 
+      // Health check
+      const health = ctx.healthResults.find((h) => h.url?.includes(record.name));
       if (health?.status === "down") {
         findings.push({
-          id: `dns-down-${record.name}`,
+          id: `dns-down-${safeId(record.name)}`,
           category: "deployment",
           severity: "warning",
-          title: `${record.name} לא מגיב (DNS → VPS)`,
-          description: `DNS record מצביע ל-${record.content} אבל השירות לא מגיב. ייתכן container כבוי.`,
+          title: `${record.name} לא מגיב`,
+          description: `DNS → ${record.content} אבל HTTP לא מגיב. Container כבוי?`,
           resource: { type: "dns-record", name: record.name, platform: "cloudflare", url: mgmt.cloudflare.dns(rootDomain) },
-          recommendation: `בדוק docker ps על ה-VPS או מחק DNS record מיותר`,
+          recommendation: `בדוק docker ps על VPS, או מחק DNS record`,
           autoFixable: false,
         });
       }
 
-      // Check if we can identify the source repo
-      const subdomain = record.name.split(".")[0];
-      const matchingRepo = ctx.repos.find((r) =>
-        r.name.toLowerCase().includes(subdomain) ||
-        subdomain.includes(r.name.toLowerCase().replace(/[^a-z0-9]/g, ""))
-      );
+      // Try to identify source repo (strict matching)
+      const matchingRepo = ctx.repos.find((r) => strictSubdomainMatch(subdomain, r.name));
+      const matchingDocker = Object.keys(ctx.repoCICD).find((name) => strictSubdomainMatch(subdomain, name));
 
-      if (!matchingRepo) {
-        // Try matching via CI/CD context (repos with Dockerfiles)
-        const dockerRepos = Object.entries(ctx.repoCICD).filter(([, c]) => c.hasDockerfile);
-        const hasAnyMatch = dockerRepos.some(([name]) =>
-          name.toLowerCase().includes(subdomain) || subdomain.includes(name.toLowerCase().replace(/[^a-z0-9]/g, ""))
-        );
-
-        if (!hasAnyMatch) {
-          findings.push({
-            id: `dns-no-repo-${record.name}`,
-            category: "deployment",
-            severity: "info",
-            title: `${record.name} - לא מזוהה repo מקור`,
-            description: `DNS record פעיל אבל לא מצאנו GitHub repo תואם. קשה לדעת מה הקוד שרץ שם.`,
-            resource: { type: "dns-record", name: record.name, platform: "cloudflare", url: mgmt.cloudflare.dns(rootDomain) },
-            recommendation: `תעד איזה repo/container מגיש את ${record.name}`,
-            autoFixable: false,
-          });
-        }
+      if (!matchingRepo && !matchingDocker) {
+        findings.push({
+          id: `dns-unknown-${safeId(record.name)}`,
+          category: "deployment",
+          severity: "info",
+          title: `${record.name} - repo מקור לא מזוהה`,
+          description: `DNS record פעיל ללא GitHub repo תואם. לא ניתן לעקוב אחרי קוד המקור.`,
+          resource: { type: "dns-record", name: record.name, platform: "cloudflare", url: mgmt.cloudflare.dns(rootDomain) },
+          recommendation: `תעד: איזה repo/container מגיש ${record.name}?`,
+          autoFixable: false,
+        });
       }
     }
     return findings;
@@ -261,11 +261,11 @@ export const missingCustomDomain: AuditRule = {
       const hasCustom = p.domains?.some((d) => !d.endsWith(".vercel.app"));
       if (!hasCustom && p.latestDeployment?.target === "production") {
         findings.push({
-          id: `no-domain-${p.name}`,
+          id: `no-domain-${safeId(p.name)}`,
           category: "deployment",
           severity: "info",
           title: `"${p.name}" ללא custom domain`,
-          description: `רץ רק על .vercel.app. לפרויקט user-facing שקול סאב-דומיין מ-keepit-ai.com.`,
+          description: `רץ רק על .vercel.app. שקול סאב-דומיין מ-keepit-ai.com.`,
           resource: { type: "vercel-project", name: p.name, platform: "vercel", url: mgmt.vercel.domains(p.name) },
           recommendation: `Vercel → ${p.name} → Settings → Domains`,
           autoFixable: false,
@@ -276,26 +276,32 @@ export const missingCustomDomain: AuditRule = {
   },
 };
 
-export const staleDeployments: AuditRule = {
-  id: "stale-deployments",
-  name: "Deployments ישנים",
+export const deploymentDrift: AuditRule = {
+  id: "deployment-drift",
+  name: "פער בין קוד ל-deployment",
   category: "deployment",
   run(ctx) {
     const findings: AuditFinding[] = [];
-    const thirtyDays = 30 * 24 * 60 * 60 * 1000;
 
     for (const p of ctx.vercelProjects) {
-      if (!p.latestDeployment?.createdAt) continue;
-      const deployAge = Date.now() - p.latestDeployment.createdAt;
-      if (deployAge > thirtyDays) {
+      if (!p.link?.repo || !p.latestDeployment?.createdAt) continue;
+      const repo = ctx.repos.find((r) => r.name.toLowerCase() === p.link!.repo.toLowerCase());
+      if (!repo) continue;
+
+      const deployTime = p.latestDeployment.createdAt;
+      const pushTime = new Date(repo.pushed_at).getTime();
+      const driftHours = (pushTime - deployTime) / (1000 * 60 * 60);
+
+      // If repo was pushed > 24h after last deploy → drift
+      if (driftHours > 24) {
         findings.push({
-          id: `stale-deploy-${p.name}`,
+          id: `drift-${safeId(p.name)}`,
           category: "deployment",
-          severity: "info",
-          title: `"${p.name}" - deploy ישן (${daysSince(new Date(p.latestDeployment.createdAt).toISOString())} ימים)`,
-          description: `ה-deployment האחרון היה ב-${new Date(p.latestDeployment.createdAt).toLocaleDateString("he-IL")}. ודא שהקוד עדכני.`,
+          severity: "warning",
+          title: `"${p.name}" - קוד חדש לא deployed`,
+          description: `Last push: ${new Date(repo.pushed_at).toLocaleDateString("he-IL")}. Last deploy: ${new Date(deployTime).toLocaleDateString("he-IL")}. פער של ${Math.floor(driftHours / 24)} ימים.`,
           resource: { type: "vercel-project", name: p.name, platform: "vercel", url: mgmt.vercel.project(p.name) },
-          recommendation: `בדוק אם יש commits שלא deployed, או שהפרויקט מיושן`,
+          recommendation: `בדוק למה commits חדשים לא triggered deploy`,
           autoFixable: false,
         });
       }
@@ -315,16 +321,16 @@ export const noCICD: AuditRule = {
     for (const [repoName, cicd] of Object.entries(ctx.repoCICD)) {
       const repo = ctx.repos.find((r) => r.name === repoName);
       if (!repo) continue;
-
-      if (cicd.hasDockerfile && !cicd.hasActions) {
+      // Only flag if repo has Docker but no Actions (and is active)
+      if (cicd.hasDockerfile && !cicd.hasActions && daysSince(repo.pushed_at) < 180) {
         findings.push({
-          id: `no-cicd-${repoName}`,
+          id: `no-cicd-${safeId(repoName)}`,
           category: "cicd",
           severity: "warning",
-          title: `"${repoName}" - Dockerfile ללא CI/CD pipeline`,
-          description: `ל-repo יש Dockerfile אבל אין GitHub Actions. כל deploy דורש SSH ידני.`,
+          title: `"${repoName}" - Dockerfile ללא CI/CD`,
+          description: `Dockerfile קיים אבל אין GitHub Actions. Deploy ידני בלבד.`,
           resource: { type: "github-repo", name: repo.full_name, platform: "github", url: `${repo.html_url}/actions` },
-          recommendation: `הוסף .github/workflows/deploy.yml עם SSH deploy אוטומטי`,
+          recommendation: `הוסף .github/workflows/deploy.yml`,
           autoFixable: false,
         });
       }
@@ -340,20 +346,20 @@ export const failedWorkflows: AuditRule = {
   run(ctx) {
     const findings: AuditFinding[] = [];
     for (const [repoName, cicd] of Object.entries(ctx.repoCICD)) {
-      if (!cicd.lastRun) continue;
+      if (!cicd.lastRun || cicd.lastRun.conclusion !== "failure") continue;
+      // Only flag recent failures (last 14 days)
+      if (daysSince(cicd.lastRun.created_at) > 14) continue;
 
-      if (cicd.lastRun.conclusion === "failure") {
-        findings.push({
-          id: `fail-${repoName}`,
-          category: "cicd",
-          severity: "warning",
-          title: `CI/CD נכשל: ${repoName}`,
-          description: `Workflow "${cicd.lastRun.name}" נכשל ב-branch ${cicd.lastRun.head_branch} (${new Date(cicd.lastRun.created_at).toLocaleDateString("he-IL")}).`,
-          resource: { type: "github-workflow", name: repoName, platform: "github", url: cicd.lastRun.html_url },
-          recommendation: `בדוק logs ב-GitHub Actions ותקן`,
-          autoFixable: false,
-        });
-      }
+      findings.push({
+        id: `fail-${safeId(repoName)}`,
+        category: "cicd",
+        severity: "warning",
+        title: `CI/CD נכשל: ${repoName}`,
+        description: `"${cicd.lastRun.name}" נכשל ב-${cicd.lastRun.head_branch} (${new Date(cicd.lastRun.created_at).toLocaleDateString("he-IL")}).`,
+        resource: { type: "github-workflow", name: repoName, platform: "github", url: cicd.lastRun.html_url },
+        recommendation: `בדוק logs ב-GitHub Actions ותקן`,
+        autoFixable: false,
+      });
     }
     return findings;
   },
@@ -367,19 +373,23 @@ export const staleRepos: AuditRule = {
   category: "cleanup",
   run(ctx) {
     const findings: AuditFinding[] = [];
+    // Track which repos were already flagged by other rules to reduce noise
+    const alreadyFlagged = new Set<string>();
+
     for (const repo of ctx.repos) {
       const days = daysSince(repo.pushed_at);
       if (days < 90) continue;
+      if (alreadyFlagged.has(repo.name)) continue;
+      alreadyFlagged.add(repo.name);
 
-      const isPublic = !repo.private;
       findings.push({
-        id: `stale-${repo.name}`,
+        id: `stale-${safeId(repo.name)}`,
         category: "cleanup",
-        severity: isPublic ? "warning" : "info",
+        severity: !repo.private ? "warning" : "info",
         title: `Repo ישן: "${repo.name}" (${days} ימים)`,
-        description: `לא עודכן מאז ${new Date(repo.pushed_at).toLocaleDateString("he-IL")}.${isPublic ? " ⚠ PUBLIC - שקול להפוך ל-Private." : ""}`,
+        description: `לא עודכן מאז ${new Date(repo.pushed_at).toLocaleDateString("he-IL")}.${!repo.private ? " PUBLIC." : ""}`,
         resource: { type: "github-repo", name: repo.full_name, platform: "github", url: repo.html_url },
-        recommendation: isPublic ? `הפוך ל-Private או ארכב` : `ארכב אם לא בשימוש`,
+        recommendation: !repo.private ? `הפוך ל-Private או ארכב` : `ארכב אם לא בשימוש`,
         autoFixable: false,
       });
     }
@@ -396,17 +406,19 @@ export const undeployedRepos: AuditRule = {
     const deployed = getDeployedRepoNames(ctx);
 
     for (const repo of ctx.repos) {
-      if (daysSince(repo.pushed_at) > 60) continue; // Only check active repos
+      if (daysSince(repo.pushed_at) > 90) continue; // staleRepos handles old ones
       if (deployed.has(repo.name.toLowerCase())) continue;
+      // Skip repos that might be tools/scripts (no web framework indicators)
+      if (repo.language === "Shell" || repo.language === "Vim Script") continue;
 
       findings.push({
-        id: `undeployed-${repo.name}`,
+        id: `undeployed-${safeId(repo.name)}`,
         category: "cleanup",
         severity: "info",
-        title: `Repo אקטיבי ללא deployment: "${repo.name}"`,
-        description: `עודכן ${new Date(repo.pushed_at).toLocaleDateString("he-IL")} אבל לא מחובר לשום פלטפורמה. ${repo.language ?? ""}`,
+        title: `Repo פעיל ללא deployment: "${repo.name}"`,
+        description: `עודכן ${new Date(repo.pushed_at).toLocaleDateString("he-IL")}. ${repo.language ?? ""} · לא מחובר לשום פלטפורמה.`,
         resource: { type: "github-repo", name: repo.full_name, platform: "github", url: repo.html_url },
-        recommendation: `פרויקט web? → חבר ל-Vercel. כלי CLI? → תקין, התעלם.`,
+        recommendation: `פרויקט web → חבר ל-Vercel. כלי CLI → תקין.`,
         autoFixable: false,
       });
     }
@@ -422,31 +434,31 @@ export const slowEndpoints: AuditRule = {
   category: "performance",
   run(ctx) {
     const findings: AuditFinding[] = [];
+    if (ctx.healthResults.length === 0) return findings;
 
-    // Separate VPS vs Vercel for comparison
-    const vpsEndpoints = ctx.healthResults.filter((h) => h.platform === "cloudflare" || h.platform === "hetzner");
-    const vercelEndpoints = ctx.healthResults.filter((h) => h.platform === "vercel");
-    const avgVercel = vercelEndpoints.length > 0
-      ? vercelEndpoints.reduce((s, h) => s + h.responseTime, 0) / vercelEndpoints.length
+    const vercelTimes = ctx.healthResults
+      .filter((h) => h.platform === "vercel" && h.status === "up")
+      .map((h) => h.responseTime);
+    const avgVercel = vercelTimes.length > 0
+      ? vercelTimes.reduce((s, t) => s + t, 0) / vercelTimes.length
       : 100;
 
     for (const h of ctx.healthResults) {
-      if (h.status !== "up") continue;
-      if (h.responseTime <= 500) continue;
+      if (h.status !== "up" || h.responseTime <= 500) continue;
 
-      const isVps = vpsEndpoints.includes(h);
-      const slowFactor = isVps ? (h.responseTime / avgVercel).toFixed(1) : "";
+      const isVps = h.platform !== "vercel";
+      const factor = isVps && avgVercel > 0 ? (h.responseTime / avgVercel).toFixed(1) : "";
 
       findings.push({
-        id: `slow-${h.name}`,
+        id: `slow-${safeId(h.name)}`,
         category: "performance",
-        severity: h.responseTime > 1000 ? "warning" : "info",
-        title: `${h.name} - ${h.responseTime}ms${isVps ? ` (x${slowFactor} מ-Vercel)` : ""}`,
-        description: `${h.url} response time: ${h.responseTime}ms.${isVps ? ` ה-VPS ב-Helsinki איטי פי ${slowFactor} מ-Vercel.` : ""}`,
+        severity: h.responseTime > 2000 ? "warning" : "info",
+        title: `${h.name} - ${h.responseTime}ms${factor ? ` (x${factor})` : ""}`,
+        description: `Response: ${h.responseTime}ms.${factor ? ` פי ${factor} מממוצע Vercel (${Math.round(avgVercel)}ms).` : ""}`,
         resource: { type: "endpoint", name: h.name, platform: h.platform, url: h.url },
         recommendation: isVps
-          ? `שקול Cloudflare caching, CDN, או העברה ל-Vercel/CF Pages`
-          : `בדוק server-side bottlenecks`,
+          ? `שקול CF caching, CDN, או העברה ל-serverless`
+          : `בדוק bottlenecks בצד שרת`,
         autoFixable: false,
       });
     }
@@ -454,25 +466,20 @@ export const slowEndpoints: AuditRule = {
   },
 };
 
-// ─── ALL RULES REGISTRY ──────────────────────────────────────────
-// To add a new rule: create it above, add here. That's it.
+// ─── REGISTRY ─────────────────────────────────────────────────────
+// To add a new rule: 1) write it above, 2) add to this array.
 
 export const allRules: AuditRule[] = [
-  // Security
   publicRepos,
   serverSecurity,
-  // Deployment
   duplicateProjects,
   noRepoLinked,
   dnsIntegrity,
   missingCustomDomain,
-  staleDeployments,
-  // CI/CD
+  deploymentDrift,
   noCICD,
   failedWorkflows,
-  // Cleanup
   staleRepos,
   undeployedRepos,
-  // Performance
   slowEndpoints,
 ];

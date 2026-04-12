@@ -82,8 +82,20 @@ export default function AuditPage() {
         <div>
           <h1 className="text-2xl font-bold">ביקורת תשתיות</h1>
           <p className="text-muted-foreground">
-            ניתוח אוטומטי · {new Date(report.generatedAt).toLocaleString("he-IL")}
+            ניתוח אוטומטי · {new Date(report.generatedAt).toLocaleString("he-IL")} · {report.rulesRun ?? 0} rules
           </p>
+          {/* Data source indicators */}
+          {report.dataSources && (
+            <div className="flex gap-2 mt-1">
+              {Object.entries(report.dataSources).map(([name, src]) => (
+                <span key={name} className={`text-[10px] px-1.5 py-0.5 rounded ${
+                  (src as {ok:boolean}).ok ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                }`}>
+                  {name}: {(src as {ok:boolean}).ok ? (src as {count:number}).count : "ERR"}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
         <Button variant="outline" size="sm" onClick={runAudit} disabled={loading}>
           <RefreshCw className={`h-4 w-4 ml-2 ${loading ? "animate-spin" : ""}`} />
