@@ -247,6 +247,10 @@ export const dnsIntegrity: AuditRule = {
       }
 
       // Try to identify source repo via multiple strategies
+      // Strategy 0: GitHub homepage field
+      const homepageMatch = ctx.repos.find((r) => r.homepage?.includes(record.name));
+      if (homepageMatch) continue; // Explicitly linked via homepage
+
       // Strategy 1: deploy target match (repo config files reference this domain)
       let foundViaDeployTarget = false;
       if (ctx.repoDeployTargets) {

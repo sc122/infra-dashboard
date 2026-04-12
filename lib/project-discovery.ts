@@ -288,6 +288,17 @@ function findMatchingRepos(
   const matches: GitHubRepo[] = [];
   const matchedNames = new Set<string>();
 
+  // Strategy 0: GitHub homepage field (most accurate — set by user)
+  for (const repo of repos) {
+    if (repo.homepage && (repo.homepage.includes(fullDomain))) {
+      if (!matchedNames.has(repo.name)) {
+        matches.push(repo);
+        matchedNames.add(repo.name);
+      }
+    }
+  }
+  if (matches.length > 0) return matches;
+
   // Strategy 1: Repo deploy targets (docker-compose, deploy scripts mentioning this domain)
   // IMPORTANT: match the full domain exactly, or the subdomain against the TARGET's subdomain
   // (not against the full target string, because "keep" would match "keepit-ai.com" in every target)
