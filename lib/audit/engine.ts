@@ -6,7 +6,7 @@ import { listServers } from "@/lib/api/hetzner";
 import { allRules } from "./rules";
 
 export async function runAudit(): Promise<AuditReport> {
-  // Phase 1: Gather all data in parallel
+  // Phase 1: Gather all platform data in parallel
   const [reposResult, vercelResult, zonesResult, hetznerResult, healthResult] =
     await Promise.allSettled([
       listRepos(),
@@ -22,17 +22,18 @@ export async function runAudit(): Promise<AuditReport> {
   const hetznerServers = hetznerResult.status === "fulfilled" ? hetznerResult.value : [];
   const healthResults = healthResult.status === "fulfilled" ? healthResult.value : [];
 
-  // Get DNS records for first zone
+  // Phase 1b: Get DNS records for ALL zones
   let dnsRecords: AuditContext["dnsRecords"] = [];
-  if (cfZones.length > 0) {
+  for (const zone of cfZones) {
     try {
-      dnsRecords = await listDNSRecords(cfZones[0].id);
-    } catch { /* ignore */ }
+      const records = await listDNSRecords(zone.id);
+      dnsRecords.push(...records);
+    } catch { /* zone might not be accessible */ }
   }
 
-  // Phase 2: Get CI/CD info for repos (limit to 20 most recent)
+  // Phase 2: Get CI/CD info for repos in parallel (batch of 20)
   const repoCICD: AuditContext["repoCICD"] = {};
-  const reposToCheck = repos.slice(0, 20);
+  const reposToCheck = repos.slice(0, 25);
   const cicdResults = await Promise.allSettled(
     reposToCheck.map(async (r) => {
       const [owner, name] = r.full_name.split("/");
@@ -47,7 +48,7 @@ export async function runAudit(): Promise<AuditReport> {
     }
   }
 
-  // Phase 3: Build context and run all rules
+  // Phase 3: Build unified context
   const ctx: AuditContext = {
     repos,
     repoCICD,
@@ -58,24 +59,37 @@ export async function runAudit(): Promise<AuditReport> {
     healthResults,
   };
 
+  // Phase 4: Run all rules, collect findings
   const findings: AuditFinding[] = [];
+  const ruleErrors: string[] = [];
+
   for (const rule of allRules) {
     try {
-      findings.push(...rule(ctx));
-    } catch {
-      // Individual rule failure shouldn't break the audit
+      const ruleFindings = rule.run(ctx);
+      findings.push(...ruleFindings);
+    } catch (err) {
+      // Don't let one rule break the whole audit
+      ruleErrors.push(`Rule "${rule.id}" failed: ${err instanceof Error ? err.message : "unknown"}`);
     }
   }
 
-  // Sort by severity
-  const severityOrder = { critical: 0, warning: 1, info: 2 };
-  findings.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]);
+  // Phase 5: Sort by severity, then by category
+  const severityOrder: Record<string, number> = { critical: 0, warning: 1, info: 2 };
+  findings.sort((a, b) => {
+    const sevDiff = severityOrder[a.severity] - severityOrder[b.severity];
+    if (sevDiff !== 0) return sevDiff;
+    return a.category.localeCompare(b.category);
+  });
 
-  // Calculate health score
+  // Phase 6: Calculate health score
   const critical = findings.filter((f) => f.severity === "critical").length;
   const warning = findings.filter((f) => f.severity === "warning").length;
   const info = findings.filter((f) => f.severity === "info").length;
-  const score = Math.max(0, 100 - critical * 15 - warning * 5 - info * 1);
+
+  // Weighted score: criticals hurt most, info barely matters
+  // Max deduction: 100 points. Criticals = 20pts, warnings = 5pts, info = 1pt
+  const deduction = Math.min(100, critical * 20 + warning * 5 + info * 1);
+  const score = Math.max(0, 100 - deduction);
 
   return {
     generatedAt: new Date().toISOString(),
