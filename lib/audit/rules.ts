@@ -1,6 +1,6 @@
 import type { AuditFinding, AuditContext } from "@/lib/types";
 import { mgmt } from "@/lib/utils";
-import { discoverDockerProjects } from "@/lib/docker-projects";
+import { getDeployedRepoNames as getDiscoveredDeployedRepos } from "@/lib/project-discovery";
 
 export type AuditRule = {
   id: string;
@@ -22,27 +22,20 @@ function safeId(s: string): string {
 
 /** Build set of repo names that are deployed somewhere */
 function getDeployedRepoNames(ctx: AuditContext): Set<string> {
-  const deployed = new Set<string>();
-  // Vercel-linked repos
-  for (const p of ctx.vercelProjects) {
-    if (p.link?.repo) deployed.add(p.link.repo.toLowerCase());
-  }
-  // Docker projects (auto-discovered from DNS + GitHub)
-  const dockerProjects = discoverDockerProjects({
+  // Use centralized discovery engine
+  const discovered = getDiscoveredDeployedRepos({
+    vercelProjects: ctx.vercelProjects,
     dnsRecords: ctx.dnsRecords,
     hetznerServers: ctx.hetznerServers,
     repos: ctx.repos,
     repoCICD: ctx.repoCICD,
     healthResults: ctx.healthResults,
   });
-  for (const dp of dockerProjects) {
-    if (dp.repo) deployed.add(dp.repo.toLowerCase());
-  }
-  // Repos with Dockerfile/vercel.json detected by CI/CD scan
+  // Also include repos with Dockerfile/vercel.json from CI/CD scan
   for (const [name, cicd] of Object.entries(ctx.repoCICD)) {
-    if (cicd.hasDockerfile || cicd.hasVercelConfig) deployed.add(name.toLowerCase());
+    if (cicd.hasDockerfile || cicd.hasVercelConfig) discovered.add(name.toLowerCase());
   }
-  return deployed;
+  return discovered;
 }
 
 /** Get DNS A records pointing to known VPS IPs */

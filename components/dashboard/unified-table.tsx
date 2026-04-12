@@ -1,110 +1,127 @@
 "use client";
 
-import Link from "next/link";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { StatusBadge } from "./status-badge";
 import { Badge } from "@/components/ui/badge";
-import { Triangle, Cloud, Server, Container, ExternalLink, GitBranch } from "lucide-react";
 import { MgmtLink } from "./mgmt-link";
-import type { UnifiedProject } from "@/lib/types";
+import { LanguageDot, CICDBadge } from "./service-icon";
+import { Triangle, Container, GitBranch, ExternalLink, Shield, Globe } from "lucide-react";
+import type { Project } from "@/lib/project-discovery";
 
-const platformIcons: Record<string, typeof Triangle> = {
-  vercel: Triangle,
-  cloudflare: Cloud,
-  hetzner: Server,
-  docker: Container,
+const platformConfig = {
+  vercel: { icon: Triangle, label: "Vercel", color: "text-black dark:text-white" },
+  "docker-vps": { icon: Container, label: "Docker", color: "text-blue-500" },
 };
 
-export function UnifiedTable({ projects }: { projects: UnifiedProject[] }) {
+export function UnifiedTable({ projects }: { projects: Project[] }) {
   return (
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead className="text-right">פלטפורמה</TableHead>
-          <TableHead className="text-right">שם</TableHead>
-          <TableHead className="text-right">סטטוס</TableHead>
-          <TableHead className="text-right">Framework</TableHead>
+          <TableHead className="text-right w-[100px]">פלטפורמה</TableHead>
+          <TableHead className="text-right">פרויקט</TableHead>
+          <TableHead className="text-right w-[80px]">סטטוס</TableHead>
           <TableHead className="text-right">דומיין</TableHead>
           <TableHead className="text-right">Repo</TableHead>
-          <TableHead className="text-right"></TableHead>
+          <TableHead className="text-right w-[70px]">CI/CD</TableHead>
+          <TableHead className="text-right w-[60px]"></TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {projects.map((project) => {
-          const Icon = platformIcons[project.platform];
+        {projects.map((p) => {
+          const platform = platformConfig[p.hosting.platform];
+          const Icon = platform.icon;
           return (
-            <TableRow key={project.id}>
+            <TableRow key={p.id}>
+              {/* Platform */}
+              <TableCell>
+                <div className="flex items-center gap-1.5">
+                  <Icon className={`h-4 w-4 ${platform.color}`} />
+                  <span className="text-xs">{platform.label}</span>
+                </div>
+              </TableCell>
+
+              {/* Project Name */}
               <TableCell>
                 <div className="flex items-center gap-2">
-                  <Icon className="h-4 w-4" />
-                  <span className="capitalize">{project.platform}</span>
+                  <span className="font-medium">{p.name}</span>
+                  {p.cfAccessProtected && (
+                    <Shield className="h-3 w-3 text-orange-500" />
+                  )}
                 </div>
               </TableCell>
-              <TableCell className="font-medium">{project.name}</TableCell>
+
+              {/* Status */}
               <TableCell>
-                <StatusBadge status={project.status} />
+                <StatusBadge status={
+                  p.status === "up" ? "healthy" :
+                  p.status === "protected" ? "healthy" :
+                  p.status === "down" ? "down" : "unknown"
+                } />
               </TableCell>
+
+              {/* Domain */}
               <TableCell>
-                {project.framework ? (
-                  <Badge variant="secondary">{project.framework}</Badge>
-                ) : (
-                  <span className="text-muted-foreground">-</span>
+                <a
+                  href={p.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-blue-500 hover:underline flex items-center gap-1"
+                >
+                  {p.hasCustomDomain ? (
+                    <Globe className="h-3 w-3 text-green-500" />
+                  ) : null}
+                  {p.domain}
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+                {p.responseTime && (
+                  <span className={`text-[10px] ${
+                    p.responseTime > 500 ? "text-yellow-500" : "text-muted-foreground"
+                  }`}>
+                    {p.responseTime}ms
+                  </span>
                 )}
               </TableCell>
+
+              {/* Repos */}
               <TableCell>
-                <div className="flex flex-col gap-1">
-                  {project.domains.slice(0, 2).map((d) => (
-                    <a
-                      key={d}
-                      href={`https://${d}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-blue-500 hover:underline flex items-center gap-1"
-                    >
-                      {d}
-                      <ExternalLink className="h-3 w-3" />
-                    </a>
-                  ))}
-                  {project.domains.length > 2 && (
-                    <span className="text-xs text-muted-foreground">
-                      +{project.domains.length - 2} more
-                    </span>
-                  )}
-                </div>
-              </TableCell>
-              <TableCell>
-                {project.gitRepo ? (
-                  <a
-                    href={`https://github.com/${project.gitRepo}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-blue-500 hover:underline flex items-center gap-1"
-                  >
-                    <GitBranch className="h-3 w-3" />
-                    {project.gitRepo.split("/")[1]}
-                  </a>
+                {p.repos.length > 0 ? (
+                  <div className="flex flex-col gap-0.5">
+                    {p.repos.map((r) => (
+                      <a
+                        key={r.name}
+                        href={r.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-blue-500 hover:underline flex items-center gap-1"
+                      >
+                        <GitBranch className="h-3 w-3" />
+                        {r.name}
+                        {r.language && <LanguageDot language={r.language} />}
+                      </a>
+                    ))}
+                  </div>
                 ) : (
-                  <span className="text-xs text-red-400">אין repo</span>
+                  <span className="text-xs text-red-400">לא מזוהה</span>
                 )}
               </TableCell>
+
+              {/* CI/CD */}
               <TableCell>
-                <div className="flex items-center gap-1">
-                  {project.platform === "vercel" && (
-                    <Link href={`/vercel/${project.id}`} className="text-xs text-blue-500 hover:underline">
-                      פרטים
-                    </Link>
-                  )}
-                  {project.url && (
-                    <MgmtLink href={project.url} tooltip="פתח אתר" iconOnly />
-                  )}
-                </div>
+                {p.cicd.hasActions ? (
+                  <CICDBadge conclusion={p.cicd.lastRunConclusion} />
+                ) : p.cicd.hasDockerfile ? (
+                  <Badge variant="outline" className="text-[10px]">ידני</Badge>
+                ) : (
+                  <span className="text-xs text-muted-foreground">-</span>
+                )}
+              </TableCell>
+
+              {/* Actions */}
+              <TableCell>
+                <MgmtLink href={p.url} tooltip="פתח אתר" iconOnly />
               </TableCell>
             </TableRow>
           );
