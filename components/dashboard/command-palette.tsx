@@ -34,7 +34,7 @@ const PAGES: SearchItem[] = [
 
 const QUICK_LINKS: SearchItem[] = [
   { id: "ql-vercel", label: "Vercel Dashboard", icon: Triangle, group: "קישורים מהירים",
-    action: () => window.open("https://vercel.com/sc122s-projects", "_blank") },
+    action: () => { const s = process.env.NEXT_PUBLIC_VERCEL_TEAM_SLUG; if (s) window.open(`https://vercel.com/${s}`, "_blank"); else window.open("https://vercel.com/dashboard", "_blank"); } },
   { id: "ql-cf", label: "Cloudflare Dashboard", icon: Cloud, group: "קישורים מהירים",
     action: () => window.open("https://dash.cloudflare.com", "_blank") },
   { id: "ql-netlify", label: "Netlify Dashboard", icon: LayoutDashboard, group: "קישורים מהירים",
@@ -42,7 +42,7 @@ const QUICK_LINKS: SearchItem[] = [
   { id: "ql-hetzner", label: "Hetzner Console", icon: Server, group: "קישורים מהירים",
     action: () => window.open("https://console.hetzner.cloud", "_blank") },
   { id: "ql-github", label: "GitHub Profile", icon: GitBranch, group: "קישורים מהירים",
-    action: () => window.open("https://github.com/sc122", "_blank") },
+    action: () => { const u = process.env.NEXT_PUBLIC_GITHUB_USERNAME; window.open(u ? `https://github.com/${u}` : "https://github.com", "_blank"); } },
 ];
 
 export function CommandPalette() {

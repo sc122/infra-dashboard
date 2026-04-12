@@ -69,7 +69,7 @@ export default function GitHubPage() {
             <RefreshCw className={`h-4 w-4 ml-2 ${loading ? "animate-spin" : ""}`} />
             רענון
           </Button>
-          <MgmtLink href="https://github.com/sc122?tab=repositories" label="GitHub Profile" />
+          <MgmtLink href={`https://github.com/${process.env.NEXT_PUBLIC_GITHUB_USERNAME || ""}?tab=repositories`} label="GitHub Profile" />
         </div>
       </div>
 

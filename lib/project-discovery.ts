@@ -16,6 +16,7 @@ import type {
   GitHubRepo, GitHubWorkflowRun, HealthCheck,
 } from "@/lib/types";
 import type { NetlifySite } from "@/lib/api/netlify";
+import { config } from "@/lib/config";
 
 // ─── Project Model ────────────────────────────────────────────
 
@@ -102,7 +103,7 @@ export function discoverAllProjects(input: DiscoveryInput): Project[] {
     const allDomains = vp.domains ?? [];
     const customDomains = allDomains.filter((d) => !d.endsWith(".vercel.app"));
     const vercelDomains = allDomains.filter((d) =>
-      d.endsWith(".vercel.app") && !d.includes("-sc122s-") && !d.includes("-git-")
+      d.endsWith(".vercel.app") && !d.includes(`-${config.vercelTeamSlug?.replace("-projects", "").replace(/s$/, "")}s-`) && !d.includes("-git-")
     );
     const primaryDomain = customDomains[0] ?? vercelDomains[0] ?? `${vp.name}.vercel.app`;
 
@@ -127,7 +128,7 @@ export function discoverAllProjects(input: DiscoveryInput): Project[] {
       name: formatProjectName(vp.name),
       url: `https://${primaryDomain}`,
       domain: primaryDomain,
-      aliases: allDomains.filter((d) => d !== primaryDomain && !d.includes("-sc122s-") && !d.includes("-git-")),
+      aliases: allDomains.filter((d) => d !== primaryDomain && !d.includes(`-${config.vercelTeamSlug?.replace("-projects", "").replace(/s$/, "")}s-`) && !d.includes("-git-")),
       hosting: {
         platform: "vercel",
         vercelProjectId: vp.id,
@@ -301,7 +302,7 @@ function findMatchingRepos(
 
   // Strategy 1: Repo deploy targets (docker-compose, deploy scripts mentioning this domain)
   // IMPORTANT: match the full domain exactly, or the subdomain against the TARGET's subdomain
-  // (not against the full target string, because "keep" would match "keepit-ai.com" in every target)
+  // (not against the full target string, because short subdomains would match the domain suffix)
   if (repoDeployTargets) {
     for (const [repoName, targets] of Object.entries(repoDeployTargets)) {
       const domainMatch = targets.some((t) => {

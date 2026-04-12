@@ -1,7 +1,9 @@
 import type { AuditReport, AuditFinding, HealthCheck } from "@/lib/types";
 
+import { config } from "@/lib/config";
+
 const TELEGRAM_API = "https://api.telegram.org";
-const DASHBOARD_URL = "https://infra-dashboard-rho.vercel.app";
+const DASHBOARD_URL = config.dashboardUrl;
 
 function getBotUrl() {
   const token = process.env.TELEGRAM_BOT_TOKEN;

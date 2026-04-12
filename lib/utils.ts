@@ -1,30 +1,28 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { config } from "./config"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-// Management console URL helpers
-const VERCEL_TEAM_SLUG = "sc122s-projects";
-const CF_ACCOUNT_ID = "2ca3a08ea8923300e5667acecada4604";
-
+// Management console URL helpers — all derived from config (no hardcoded values)
 export const mgmt = {
   vercel: {
-    project: (name: string) => `https://vercel.com/${VERCEL_TEAM_SLUG}/${name}`,
-    deployment: (name: string, id: string) => `https://vercel.com/${VERCEL_TEAM_SLUG}/${name}/${id}`,
-    domains: (name: string) => `https://vercel.com/${VERCEL_TEAM_SLUG}/${name}/settings/domains`,
-    envVars: (name: string) => `https://vercel.com/${VERCEL_TEAM_SLUG}/${name}/settings/environment-variables`,
-    logs: (name: string) => `https://vercel.com/${VERCEL_TEAM_SLUG}/${name}/logs`,
-    analytics: (name: string) => `https://vercel.com/${VERCEL_TEAM_SLUG}/${name}/analytics`,
-    usage: () => `https://vercel.com/${VERCEL_TEAM_SLUG}/~/usage`,
+    project: (name: string) => `https://vercel.com/${config.vercelTeamSlug}/${name}`,
+    deployment: (name: string, id: string) => `https://vercel.com/${config.vercelTeamSlug}/${name}/${id}`,
+    domains: (name: string) => `https://vercel.com/${config.vercelTeamSlug}/${name}/settings/domains`,
+    envVars: (name: string) => `https://vercel.com/${config.vercelTeamSlug}/${name}/settings/environment-variables`,
+    logs: (name: string) => `https://vercel.com/${config.vercelTeamSlug}/${name}/logs`,
+    analytics: (name: string) => `https://vercel.com/${config.vercelTeamSlug}/${name}/analytics`,
+    usage: () => `https://vercel.com/${config.vercelTeamSlug}/~/usage`,
   },
   cloudflare: {
-    zone: (domain: string) => `https://dash.cloudflare.com/${CF_ACCOUNT_ID}/${domain}`,
-    dns: (domain: string) => `https://dash.cloudflare.com/${CF_ACCOUNT_ID}/${domain}/dns/records`,
-    r2Bucket: (name: string) => `https://dash.cloudflare.com/${CF_ACCOUNT_ID}/r2/default/buckets/${name}`,
-    r2Overview: () => `https://dash.cloudflare.com/${CF_ACCOUNT_ID}/r2/overview`,
-    analytics: (domain: string) => `https://dash.cloudflare.com/${CF_ACCOUNT_ID}/${domain}/analytics`,
+    zone: (domain: string) => `https://dash.cloudflare.com/${config.cfAccountId}/${domain}`,
+    dns: (domain: string) => `https://dash.cloudflare.com/${config.cfAccountId}/${domain}/dns/records`,
+    r2Bucket: (name: string) => `https://dash.cloudflare.com/${config.cfAccountId}/r2/default/buckets/${name}`,
+    r2Overview: () => `https://dash.cloudflare.com/${config.cfAccountId}/r2/overview`,
+    analytics: (domain: string) => `https://dash.cloudflare.com/${config.cfAccountId}/${domain}/analytics`,
   },
   hetzner: {
     server: (id: number) => `https://console.hetzner.cloud/projects/default/servers/${id}`,

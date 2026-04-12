@@ -107,7 +107,7 @@ export function Sidebar() {
         ))}
       </nav>
       <div className="p-4 border-t text-xs text-muted-foreground">
-        <p>sc122&apos;s projects</p>
+        <p>{process.env.NEXT_PUBLIC_DASHBOARD_NAME || "Infra Dashboard"}</p>
       </div>
     </aside>
   );

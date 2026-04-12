@@ -1,4 +1,5 @@
 import type { GitHubRepo, GitHubCommit, GitHubWorkflowRun } from "@/lib/types";
+import { config } from "@/lib/config";
 
 const GITHUB_API = "https://api.github.com";
 
@@ -108,7 +109,10 @@ export async function extractRepoDeployTarget(
   const compose = await getFileContent(owner, repo, "docker-compose.yml");
   if (compose) {
     // Look for domain references in comments or labels
-    const domainMatches = compose.match(/[\w-]+\.keepit-ai\.com/g);
+    const domainPattern = config.deployDomain
+      ? new RegExp(`[\\w-]+\\.${config.deployDomain.replace(/\./g, "\\.")}`, "g")
+      : null;
+    const domainMatches = domainPattern ? compose.match(domainPattern) : null;
     if (domainMatches) domains.push(...domainMatches);
     // Extract container_name as a hint
     const containerMatch = compose.match(/container_name:\s*(\S+)/);
@@ -119,7 +123,10 @@ export async function extractRepoDeployTarget(
   for (const script of ["deploy.sh", "deploy-camp.sh", "deploy-prod.sh"]) {
     const content = await getFileContent(owner, repo, script);
     if (content) {
-      const matches = content.match(/[\w-]+\.keepit-ai\.com/g);
+      const dp = config.deployDomain
+        ? new RegExp(`[\\w-]+\\.${config.deployDomain.replace(/\./g, "\\.")}`, "g")
+        : null;
+      const matches = dp ? content.match(dp) : null;
       if (matches) domains.push(...matches);
     }
   }
@@ -130,7 +137,8 @@ export async function extractRepoDeployTarget(
     try {
       const parsed = JSON.parse(pkg);
       if (parsed.homepage) {
-        const match = parsed.homepage.match(/([\w-]+\.(?:keepit-ai\.com|vercel\.app))/);
+        const domainAlt = config.deployDomain ? config.deployDomain.replace(/\./g, "\\.") : "example\\.com";
+        const match = parsed.homepage.match(new RegExp(`([\\w-]+\\.(?:${domainAlt}|vercel\\.app|netlify\\.app))`));
         if (match) domains.push(match[1]);
       }
     } catch { /* invalid JSON */ }

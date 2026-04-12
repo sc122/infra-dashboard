@@ -94,7 +94,8 @@ export default function CodeMapPage() {
           const domains: string[] = [];
           if (vercelMatch) {
             platform = "vercel"; platformName = vercelMatch.name;
-            domains.push(...(vercelMatch.domains?.filter((d) => !d.includes("-sc122s-") && !d.includes("-git-")) ?? []));
+            const teamFilter = process.env.NEXT_PUBLIC_VERCEL_TEAM_SLUG?.replace("-projects", "") || "";
+            domains.push(...(vercelMatch.domains?.filter((d) => !(teamFilter && d.includes(`-${teamFilter}-`)) && !d.includes("-git-")) ?? []));
           } else if (netlifyMatch) {
             platform = "netlify"; platformName = netlifyMatch.name;
             domains.push(netlifyMatch.custom_domain ?? `${netlifyMatch.name}.netlify.app`);

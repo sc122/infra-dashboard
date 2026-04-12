@@ -300,7 +300,7 @@ export const missingCustomDomain: AuditRule = {
           category: "deployment",
           severity: "info",
           title: `"${p.name}" ללא custom domain`,
-          description: `רץ רק על .vercel.app. שקול סאב-דומיין מ-keepit-ai.com.`,
+          description: `רץ רק על .vercel.app. שקול להוסיף custom domain.`,
           resource: { type: "vercel-project", name: p.name, platform: "vercel", url: mgmt.vercel.domains(p.name) },
           recommendation: `Vercel → ${p.name} → Settings → Domains`,
           autoFixable: false,

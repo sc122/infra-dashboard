@@ -194,7 +194,7 @@ export default function CostsPage() {
                 {cfZones[0]?.plan?.name ?? "Free"}
               </Badge>
               <MgmtLink
-                href={mgmt.cloudflare.zone(cfZones[0]?.name ?? "keepit-ai.com")}
+                href={mgmt.cloudflare.zone(cfZones[0]?.name ?? "")}
                 label="ניהול"
                 tooltip="Cloudflare Dashboard"
               />
