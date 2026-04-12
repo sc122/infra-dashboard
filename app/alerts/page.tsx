@@ -16,8 +16,6 @@ export default function AlertsPage() {
     setTestStatus("sending");
     setErrorMsg("");
     try {
-      await fetchApi("/api/notify");
-      // POST request
       const res = await fetch("/api/notify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
