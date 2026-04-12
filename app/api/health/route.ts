@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { listProjects } from "@/lib/api/vercel";
+import { listProjectsBasic } from "@/lib/api/vercel";
 import { listZones, listDNSRecords } from "@/lib/api/cloudflare";
 import type { HealthCheck } from "@/lib/types";
 
@@ -41,20 +41,19 @@ export async function GET() {
     // Build list of endpoints to check
     const endpoints: { name: string; url: string; platform: string }[] = [];
 
-    // Vercel projects - pick stable domain (not deployment-specific)
+    // Vercel projects - use latest deployment URL or construct from project name
     try {
-      const projects = await listProjects();
+      const projects = await listProjectsBasic();
       for (const p of projects) {
-        // Prefer custom domain, then project.vercel.app, skip deployment-specific URLs
-        const stableDomain = p.domains?.find((d: string) => !d.includes("-sc122s-projects") && !d.includes("-git-"))
-          ?? p.domains?.[0];
-        if (stableDomain) {
-          endpoints.push({
-            name: p.name,
-            url: `https://${stableDomain}`,
-            platform: "vercel",
-          });
-        }
+        // Use the latestDeployment URL if available, otherwise construct from name
+        const url = p.latestDeployment?.url
+          ? `https://${p.latestDeployment.url}`
+          : `https://${p.name}.vercel.app`;
+        endpoints.push({
+          name: p.name,
+          url,
+          platform: "vercel",
+        });
       }
     } catch {
       // Vercel API might not be configured
