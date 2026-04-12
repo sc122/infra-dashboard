@@ -14,6 +14,7 @@ import {
   GitBranch,
   Map,
   Search,
+  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
@@ -42,6 +43,7 @@ const navSections = [
       { href: "/health", label: "Health Monitor", icon: Activity },
       { href: "/costs", label: "עלויות", icon: DollarSign },
       { href: "/alerts", label: "התראות", icon: Bell },
+      { href: "/audit", label: "ביקורת תשתיות", icon: ShieldCheck },
     ],
   },
 ];

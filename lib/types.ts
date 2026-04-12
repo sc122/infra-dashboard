@@ -183,6 +183,35 @@ export interface GitHubCommit {
   html_url: string;
 }
 
+// Audit types
+export interface AuditFinding {
+  id: string;
+  category: "security" | "deployment" | "cicd" | "cleanup" | "performance";
+  severity: "critical" | "warning" | "info";
+  title: string;
+  description: string;
+  resource: { type: string; name: string; platform: string; url?: string };
+  recommendation: string;
+  autoFixable: boolean;
+}
+
+export interface AuditReport {
+  generatedAt: string;
+  score: number;
+  findings: AuditFinding[];
+  summary: { critical: number; warning: number; info: number; total: number };
+}
+
+export interface AuditContext {
+  repos: GitHubRepo[];
+  repoCICD: Record<string, { hasActions: boolean; hasDockerfile: boolean; hasVercelConfig: boolean; lastRun?: GitHubWorkflowRun }>;
+  vercelProjects: VercelProject[];
+  cfZones: CFZone[];
+  dnsRecords: CFDNSRecord[];
+  hetznerServers: HetznerServer[];
+  healthResults: HealthCheck[];
+}
+
 // Code Map - unified view
 export interface CodeProject {
   repo: GitHubRepo;
