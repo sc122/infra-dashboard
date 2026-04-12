@@ -2,24 +2,49 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export function proxy(request: NextRequest) {
-  // Skip auth for API routes (they have their own auth)
-  if (request.nextUrl.pathname.startsWith("/api/")) {
-    return NextResponse.next();
-  }
-
   const password = process.env.DASHBOARD_PASSWORD;
+
+  // No password set = no auth (dev mode)
   if (!password) {
-    // No password set = no auth required
     return NextResponse.next();
   }
 
-  // Check for auth cookie
+  // Allow login API without auth (it's the auth endpoint itself)
+  if (request.nextUrl.pathname === "/api/login") {
+    return NextResponse.next();
+  }
+
+  // Allow cron with Vercel's cron secret
+  if (request.nextUrl.pathname === "/api/cron") {
+    const authHeader = request.headers.get("authorization");
+    const cronSecret = process.env.CRON_SECRET;
+    if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
+      return NextResponse.next();
+    }
+    // Fall through to cookie auth below
+  }
+
+  // Allow Telegram webhook (Telegram servers can't send cookies)
+  if (request.nextUrl.pathname === "/api/telegram-webhook") {
+    return NextResponse.next();
+  }
+
+  // ── Auth check (applies to EVERYTHING — pages AND API routes) ──
   const authCookie = request.cookies.get("infra-auth");
   if (authCookie?.value === password) {
     return NextResponse.next();
   }
 
-  // Return login page (uses JS POST to handle special chars in passwords)
+  // Not authenticated
+  // API routes get 401 JSON
+  if (request.nextUrl.pathname.startsWith("/api/")) {
+    return NextResponse.json(
+      { error: "Unauthorized. Please login at the dashboard first." },
+      { status: 401 }
+    );
+  }
+
+  // Pages get login form
   return new NextResponse(
     `<!DOCTYPE html>
 <html lang="he" dir="rtl">
