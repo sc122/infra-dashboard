@@ -71,7 +71,6 @@ export async function POST(request: NextRequest) {
 
       case "/help":
       case "/start": {
-        try { await sendMessage("Debug: /help command received"); } catch (e) { return NextResponse.json({ ok: false, sendError: (e as Error).message }); }
         await sendMessage(
           `\u{1F916} <b>Infra Dashboard Bot</b>\n\n` +
           `<b>\u05E4\u05E7\u05D5\u05D3\u05D5\u05EA:</b>\n` +
@@ -91,9 +90,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ ok: true });
-  } catch (err) {
-    // Log error for debugging but always return 200 for Telegram
-    console.error("Webhook error:", err instanceof Error ? err.message : err);
-    return NextResponse.json({ ok: true, error: err instanceof Error ? err.message : "unknown" });
+  } catch {
+    return NextResponse.json({ ok: true });
   }
 }
