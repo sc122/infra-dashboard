@@ -1,29 +1,41 @@
-# Infra Dashboard
+# 🏗️ Infra Dashboard
 
-> Open-source unified infrastructure management. Monitor all your platforms from one place.
+**One dashboard for all your infrastructure.** Monitor Vercel, Netlify, Cloudflare, Hetzner VPS & GitHub — auto-discovered, zero config.
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/sc122/infra-dashboard&env=DASHBOARD_PASSWORD&envDescription=Set%20a%20password%20to%20protect%20your%20dashboard&project-name=my-infra-dashboard)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)](https://www.typescriptlang.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black)](https://nextjs.org/)
+
+---
+
+## Why?
+
+If you deploy across multiple platforms, you know the pain: Vercel dashboard for web apps, Cloudflare for DNS, Hetzner console for VPS, GitHub for repos — switching between 5 tabs to understand what's running where.
+
+**Infra Dashboard** gives you a single unified view. It auto-discovers all your projects, maps code to deployments, monitors health, audits security — and alerts you on Telegram when something breaks.
 
 ## Features
 
-- **Auto-Discovery** — Finds all your projects automatically across platforms
-- **Unified View** — Vercel, Netlify, Cloudflare, Hetzner VPS, GitHub in one table
-- **Smart Classification** — Production / Active / Inactive tiers with filters
-- **Code-to-Deploy Map** — Traces repo → platform → deployment → domain
-- **Health Monitoring** — HTTP checks with response times and Telegram alerts
-- **Infrastructure Audit** — 12 automated rules detect security, deployment, CI/CD issues
-- **Telegram Bot** — Daily reports, instant alerts, bot commands (/status, /health, /audit)
-- **Cost Tracking** — Usage bars for each platform's free tier limits
-- **Command Palette** — Cmd+K search across all projects and pages
-- **Zero Config** — No YAML files. Connect platforms via Settings page
+| Feature | Description |
+|---------|-------------|
+| **Auto-Discovery** | Finds all projects across Vercel, Netlify, Cloudflare, Hetzner, GitHub |
+| **Smart Classification** | Production / Active / Inactive tiers with instant filter chips |
+| **Code → Deploy Map** | Traces each repo to its platform, deployment, and domain |
+| **Health Monitoring** | HTTP checks with response times, daily Telegram reports |
+| **Infrastructure Audit** | 12 rules detect security gaps, missing CI/CD, stale repos |
+| **Telegram Bot** | Daily reports at 8am, instant alerts, commands: `/status` `/health` `/audit` |
+| **Cost Tracking** | Usage bars showing free tier consumption per platform |
+| **Command Palette** | `Cmd+K` to search across all projects, pages, and external dashboards |
+| **Settings UI** | Connect platforms, test tokens, configure notifications — no YAML |
 
 ## Quick Start
 
-### Option 1: Deploy to Vercel (2 minutes)
+### Option 1: One-Click Deploy (2 minutes)
 
-1. Click the **Deploy** button above
+1. Click **Deploy with Vercel** above
 2. Set a dashboard password
-3. Open your dashboard → go to **Settings** → connect platforms
+3. Open dashboard → **Settings** → connect your platforms
 
 ### Option 2: Manual Setup
 
@@ -32,35 +44,32 @@ git clone https://github.com/sc122/infra-dashboard.git
 cd infra-dashboard
 npm install
 cp .env.example .env.local
-# Edit .env.local with your tokens
+# Fill in your tokens (see table below)
 npm run dev
 ```
 
-## Getting API Tokens
+## API Tokens
 
-| Platform | Where | Permissions |
-|----------|-------|-------------|
+All tokens are optional — connect only what you use.
+
+| Platform | Where to get it | Permissions |
+|----------|----------------|-------------|
 | Vercel | [vercel.com/account/tokens](https://vercel.com/account/tokens) | Read |
 | Netlify | [app.netlify.com/user/applications](https://app.netlify.com/user/applications#personal-access-tokens) | Read |
 | Cloudflare | [dash.cloudflare.com/profile/api-tokens](https://dash.cloudflare.com/profile/api-tokens) | Zone:Read, DNS:Read |
 | Hetzner | [console.hetzner.cloud](https://console.hetzner.cloud) → Security → API Tokens | Read |
 | GitHub | [github.com/settings/tokens](https://github.com/settings/tokens) | `repo` scope |
-| Telegram | [@BotFather](https://t.me/BotFather) → /newbot | Bot token + chat ID |
-
-All tokens are optional. Connect only what you use.
+| Telegram | [@BotFather](https://t.me/BotFather) → `/newbot` | Bot token + chat ID |
 
 ## Architecture
 
 ```
 ┌─────────────────────────────────────────────────┐
-│                  Next.js App                     │
+│                 Next.js App                      │
 ├──────────┬──────────┬──────────┬────────────────┤
 │ Overview │ Code Map │  Audit   │   Settings     │
-│ (auto-   │ (repo →  │ (12 mod- │   (connect     │
-│ discover)│ deploy)  │ ular     │   platforms)   │
-│          │          │ rules)   │                │
 ├──────────┴──────────┴──────────┴────────────────┤
-│              Project Discovery Engine            │
+│            Project Discovery Engine              │
 │  Vercel + Netlify + DNS/VPS + GitHub → Project[] │
 ├──────────┬──────────┬──────────┬────────────────┤
 │ Vercel   │ Netlify  │ Cloud-   │ Hetzner │GitHub│
@@ -68,54 +77,47 @@ All tokens are optional. Connect only what you use.
 └──────────┴──────────┴──────────┴─────────┴──────┘
 ```
 
-**Discovery strategies (in priority order):**
-1. GitHub `homepage` field (most accurate)
-2. Repo config files (docker-compose.yml, deploy scripts)
+**How discovery works:**
+1. GitHub `homepage` field → most accurate mapping
+2. Repo config files (docker-compose, deploy scripts) → domain references
 3. Name matching (subdomain ↔ repo name)
-4. Dockerfile detection
-
-## Adding a New Platform
-
-1. Create `lib/api/newplatform.ts` — API client
-2. Create `app/api/newplatform/route.ts` — proxy route
-3. Create `app/newplatform/page.tsx` — dedicated page
-4. Update `lib/project-discovery.ts` — add discovery source
-5. Update `lib/api/health-checker.ts` — add health checks
-6. Update `lib/audit/engine.ts` — add to data gathering
-7. Update sidebar, overview cards, command palette
+4. Dockerfile detection → VPS/Docker project
 
 ## Security
 
-Your dashboard contains sensitive infrastructure data. Multiple layers of protection are built in:
+- **HMAC-SHA256 cookies** — passwords never stored in cookies
+- **Rate limiting** — 3 login attempts/min, 5-min lockout after 6 failures
+- **Timing-safe comparison** — constant-time password verification
+- **Security headers** — X-Frame-Options, CSP, HSTS, nosniff on all responses
+- **API protection** — all routes return 401 without auth
+- **No secrets in code** — everything from environment variables
 
-- **Authentication** — Password-based login with HMAC-SHA256 token cookies (not raw passwords). Cookies are `httpOnly`, `secure`, `sameSite: strict`
-- **Rate Limiting** — Login: 3 attempts per minute per IP, lockout after 6 failed attempts (5 minutes). Audit endpoint: 3 requests per minute
-- **Timing-Safe Comparison** — Password and token verification use constant-time comparison to prevent timing attacks
-- **Security Headers** — All responses include `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `X-XSS-Protection`, `Referrer-Policy`, `Permissions-Policy`, and HSTS
-- **API Protection** — All `/api/*` routes require authentication. Unauthenticated requests return `401`
-- **No Secrets in Code** — Zero hardcoded tokens, passwords, or user-specific values. Everything comes from environment variables
-- **Telegram Webhook** — Optional `TELEGRAM_WEBHOOK_SECRET` header verification
+**Recommended:** Put your dashboard behind [Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/applications/configure-apps/self-hosted-apps/) for SSO login (free, up to 50 users).
 
-**Recommended: Cloudflare Access** — For maximum security, put your dashboard behind [Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/applications/configure-apps/self-hosted-apps/) (free up to 50 users). This adds Google/GitHub SSO login at the network level, before requests reach your server.
+## Adding a Platform
+
+1. `lib/api/newplatform.ts` — API client
+2. `app/api/newplatform/route.ts` — proxy route
+3. `app/newplatform/page.tsx` — dedicated page
+4. Update: discovery engine, health checker, audit engine, sidebar
 
 ## Development
 
 ```bash
-npm run dev          # Start dev server
-npm test             # Run unit tests (Vitest)
+npm run dev          # Dev server
+npm test             # Unit tests (Vitest)
 npm run type-check   # TypeScript check
 npm run build        # Production build
 ```
 
 ## Tech Stack
 
-- **Framework:** Next.js 16 (App Router)
-- **UI:** Tailwind CSS + shadcn/ui
-- **Charts:** Recharts
-- **Testing:** Vitest
-- **Hosting:** Vercel
-- **Language:** TypeScript
+Next.js 16 · TypeScript · Tailwind CSS · shadcn/ui · Recharts · Vitest
+
+## Contributing
+
+Contributions welcome! Fork the repo, create a branch, and open a PR. Please keep changes focused and include tests where applicable.
 
 ## License
 
-MIT
+[MIT](LICENSE)
