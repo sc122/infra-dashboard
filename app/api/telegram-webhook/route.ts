@@ -15,24 +15,20 @@ interface TelegramUpdate {
 }
 
 export async function POST(request: NextRequest) {
-  let debugInfo = "";
   try {
     const update: TelegramUpdate = await request.json();
     const chatId = update.message?.chat?.id;
     const text = update.message?.text?.trim();
 
-    debugInfo = `chatId=${chatId}, text=${text}`;
-
     // Only respond to our chat
-    const allowedChat = process.env.TELEGRAM_CHAT_ID;
+    const allowedChat = process.env.TELEGRAM_CHAT_ID?.trim();
     if (!chatId || String(chatId) !== allowedChat) {
-      return NextResponse.json({ ok: true, debug: `chat mismatch: ${chatId} vs ${allowedChat}` });
+      return NextResponse.json({ ok: true });
     }
 
-    if (!text) return NextResponse.json({ ok: true, debug: "no text" });
+    if (!text) return NextResponse.json({ ok: true });
 
     const command = text.split(" ")[0].toLowerCase().replace("@infadordebot", "");
-    debugInfo += `, command=${command}`;
 
     switch (command) {
       case "/status":
@@ -40,8 +36,8 @@ export async function POST(request: NextRequest) {
         try {
           const results = await runHealthChecks();
           await sendStatusSummary(results);
-        } catch (e) {
-          await sendMessage(`Error in /status: ${(e as Error).message}`);
+        } catch {
+          await sendMessage("\u274C \u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05D8\u05E2\u05D9\u05E0\u05EA health check");
         }
         break;
       }
@@ -52,8 +48,8 @@ export async function POST(request: NextRequest) {
         try {
           const audit = await runAudit();
           await sendAuditSummary(audit);
-        } catch (e) {
-          await sendMessage(`Error in /audit: ${(e as Error).message}`);
+        } catch {
+          await sendMessage("\u274C \u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05D4\u05E8\u05E6\u05EA \u05D1\u05D9\u05E7\u05D5\u05E8\u05EA");
         }
         break;
       }
@@ -67,8 +63,8 @@ export async function POST(request: NextRequest) {
             return `${icon} ${h.name} - ${h.responseTime}ms`;
           }).join("\n");
           await sendMessage(`\u{1F4E1} <b>Health Check</b>\n\n${lines || "\u05D0\u05D9\u05DF \u05E0\u05EA\u05D5\u05E0\u05D9\u05DD"}\n\n<i>${new Date().toLocaleString("he-IL")}</i>`);
-        } catch (e) {
-          await sendMessage(`Error in /health: ${(e as Error).message}`);
+        } catch {
+          await sendMessage("\u274C \u05E9\u05D2\u05D9\u05D0\u05D4");
         }
         break;
       }
@@ -89,11 +85,11 @@ export async function POST(request: NextRequest) {
       }
 
       default:
-        return NextResponse.json({ ok: true, debug: `unknown command: ${command}` });
+        break;
     }
 
-    return NextResponse.json({ ok: true, debug: debugInfo, handled: command });
-  } catch (err) {
-    return NextResponse.json({ ok: true, debug: debugInfo, error: (err as Error).message });
+    return NextResponse.json({ ok: true });
+  } catch {
+    return NextResponse.json({ ok: true });
   }
 }
