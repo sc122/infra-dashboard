@@ -84,6 +84,20 @@ All tokens are optional. Connect only what you use.
 6. Update `lib/audit/engine.ts` — add to data gathering
 7. Update sidebar, overview cards, command palette
 
+## Security
+
+Your dashboard contains sensitive infrastructure data. Multiple layers of protection are built in:
+
+- **Authentication** — Password-based login with HMAC-SHA256 token cookies (not raw passwords). Cookies are `httpOnly`, `secure`, `sameSite: strict`
+- **Rate Limiting** — Login: 3 attempts per minute per IP, lockout after 6 failed attempts (5 minutes). Audit endpoint: 3 requests per minute
+- **Timing-Safe Comparison** — Password and token verification use constant-time comparison to prevent timing attacks
+- **Security Headers** — All responses include `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `X-XSS-Protection`, `Referrer-Policy`, `Permissions-Policy`, and HSTS
+- **API Protection** — All `/api/*` routes require authentication. Unauthenticated requests return `401`
+- **No Secrets in Code** — Zero hardcoded tokens, passwords, or user-specific values. Everything comes from environment variables
+- **Telegram Webhook** — Optional `TELEGRAM_WEBHOOK_SECRET` header verification
+
+**Recommended: Cloudflare Access** — For maximum security, put your dashboard behind [Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/applications/configure-apps/self-hosted-apps/) (free up to 50 users). This adds Google/GitHub SSO login at the network level, before requests reach your server.
+
 ## Development
 
 ```bash
