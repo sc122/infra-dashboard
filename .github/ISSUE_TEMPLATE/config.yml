@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Platform Request
+    url: https://github.com/sc122/infra-dashboard/issues/new?labels=platform
+    about: Request a new platform integration (AWS, DigitalOcean, etc.)

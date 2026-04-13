@@ -1,0 +1,24 @@
+name: Feature Request
+description: Suggest a new feature or improvement
+labels: ["feature"]
+body:
+  - type: textarea
+    attributes:
+      label: What would you like?
+      description: Describe the feature clearly
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Why is this useful?
+      description: What problem does it solve?
+  - type: dropdown
+    attributes:
+      label: Category
+      options:
+        - New platform integration
+        - UI/UX improvement
+        - Audit rule
+        - Notification
+        - Performance
+        - Other

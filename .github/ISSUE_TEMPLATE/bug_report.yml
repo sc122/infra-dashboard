@@ -1,0 +1,22 @@
+name: Bug Report
+description: Report something that isn't working
+labels: ["bug"]
+body:
+  - type: textarea
+    attributes:
+      label: What happened?
+      description: Describe the bug
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Steps to reproduce
+      description: How can we reproduce this?
+  - type: textarea
+    attributes:
+      label: Expected behavior
+      description: What should have happened?
+  - type: input
+    attributes:
+      label: Platform
+      description: "Which platform is affected? (Vercel, Netlify, Cloudflare, etc.)"
