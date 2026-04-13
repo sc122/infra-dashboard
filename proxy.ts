@@ -1,51 +1,112 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export function proxy(request: NextRequest) {
+// ─── Rate Limiting (in-memory, per-deployment) ──────────────
+const loginAttempts = new Map<string, { count: number; resetAt: number }>();
+const MAX_ATTEMPTS = 5;
+const WINDOW_MS = 60_000; // 1 minute
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const entry = loginAttempts.get(ip);
+  if (!entry || now > entry.resetAt) {
+    loginAttempts.set(ip, { count: 1, resetAt: now + WINDOW_MS });
+    return false;
+  }
+  entry.count++;
+  return entry.count > MAX_ATTEMPTS;
+}
+
+// ─── Timing-safe string comparison ──────────────────────────
+function safeCompare(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
+
+// ─── Auth token: HMAC-based, not raw password ───────────────
+async function generateToken(password: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw", encoder.encode(password), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, encoder.encode("infra-dashboard-auth"));
+  return Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+// ─── Security Headers ───────────────────────────────────────
+function addSecurityHeaders(response: NextResponse): NextResponse {
+  response.headers.set("X-Frame-Options", "DENY");
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("X-XSS-Protection", "1; mode=block");
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  return response;
+}
+
+// ─── Main Proxy ─────────────────────────────────────────────
+export async function proxy(request: NextRequest) {
   const password = process.env.DASHBOARD_PASSWORD;
 
-  // No password set = no auth (dev mode)
+  // No password = dev mode (no auth)
   if (!password) {
-    return NextResponse.next();
+    return addSecurityHeaders(NextResponse.next());
   }
 
-  // Allow login API without auth (it's the auth endpoint itself)
+  // Allow login API (with rate limiting)
   if (request.nextUrl.pathname === "/api/login") {
-    return NextResponse.next();
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    if (isRateLimited(ip)) {
+      return addSecurityHeaders(
+        NextResponse.json({ error: "Too many attempts. Try again in 1 minute." }, { status: 429 })
+      );
+    }
+    return addSecurityHeaders(NextResponse.next());
   }
 
-  // Allow cron with Vercel's cron secret
+  // Allow cron with Vercel's secret
   if (request.nextUrl.pathname === "/api/cron") {
     const authHeader = request.headers.get("authorization");
     const cronSecret = process.env.CRON_SECRET;
     if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
-      return NextResponse.next();
+      return addSecurityHeaders(NextResponse.next());
     }
-    // Fall through to cookie auth below
   }
 
-  // Allow Telegram webhook (Telegram servers can't send cookies)
+  // Allow Telegram webhook (validates chat ID internally)
   if (request.nextUrl.pathname === "/api/telegram-webhook") {
-    return NextResponse.next();
+    // Verify Telegram secret token if configured
+    const secret = process.env.TELEGRAM_WEBHOOK_SECRET;
+    if (secret) {
+      const headerSecret = request.headers.get("x-telegram-bot-api-secret-token");
+      if (headerSecret !== secret) {
+        return NextResponse.json({ error: "Invalid secret" }, { status: 403 });
+      }
+    }
+    return addSecurityHeaders(NextResponse.next());
   }
 
-  // ── Auth check (applies to EVERYTHING — pages AND API routes) ──
+  // ── Auth check — all other routes ──
   const authCookie = request.cookies.get("infra-auth");
-  if (authCookie?.value === password) {
-    return NextResponse.next();
+  if (authCookie?.value) {
+    const expectedToken = await generateToken(password);
+    if (safeCompare(authCookie.value, expectedToken)) {
+      return addSecurityHeaders(NextResponse.next());
+    }
   }
 
-  // Not authenticated
-  // API routes get 401 JSON
+  // Not authenticated — API gets 401 JSON
   if (request.nextUrl.pathname.startsWith("/api/")) {
-    return NextResponse.json(
-      { error: "Unauthorized. Please login at the dashboard first." },
-      { status: 401 }
+    return addSecurityHeaders(
+      NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     );
   }
 
-  // Pages get login form
-  return new NextResponse(
+  // Pages get login form (generic error — don't reveal password exists)
+  return addSecurityHeaders(new NextResponse(
     `<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Login - Infra Dashboard</title>
@@ -62,10 +123,10 @@ export function proxy(request: NextRequest) {
 <body>
   <div class="card">
     <h1>Infra Dashboard</h1>
-    <p>הזן סיסמה כדי להיכנס</p>
+    <p>Authentication required</p>
     <form id="f" onsubmit="return login(event)">
-      <input type="password" id="pw" placeholder="סיסמה" autofocus required />
-      <button type="submit" id="btn">כניסה</button>
+      <input type="password" id="pw" placeholder="Password" autofocus required />
+      <button type="submit" id="btn">Login</button>
       <div class="err" id="err"></div>
     </form>
   </div>
@@ -77,14 +138,14 @@ export function proxy(request: NextRequest) {
       try{
         var r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:document.getElementById('pw').value})});
         if(r.ok){window.location.reload();}
-        else{var d=await r.json();err.textContent=d.error||'שגיאה';err.style.display='block';}
-      }catch(x){err.textContent='שגיאת רשת';err.style.display='block';}
-      b.textContent='כניסה';
+        else{var d=await r.json();err.textContent=d.error||'Authentication failed';err.style.display='block';}
+      }catch(x){err.textContent='Network error';err.style.display='block';}
+      b.textContent='Login';
     }
   </script>
 </body></html>`,
     { status: 401, headers: { "Content-Type": "text/html; charset=utf-8" } }
-  );
+  ));
 }
 
 export const config = {
