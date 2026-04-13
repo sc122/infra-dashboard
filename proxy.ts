@@ -2,19 +2,38 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 // ─── Rate Limiting (in-memory, per-deployment) ──────────────
-const loginAttempts = new Map<string, { count: number; resetAt: number }>();
-const MAX_ATTEMPTS = 5;
-const WINDOW_MS = 60_000; // 1 minute
+const rateLimits = new Map<string, { count: number; resetAt: number; locked: boolean; lockUntil: number }>();
 
-function isRateLimited(ip: string): boolean {
+function checkRateLimit(key: string, maxAttempts: number, windowMs: number, lockoutMs = 0): "ok" | "limited" | "locked" {
   const now = Date.now();
-  const entry = loginAttempts.get(ip);
+  const entry = rateLimits.get(key);
+
+  // Check lockout
+  if (entry?.locked && now < entry.lockUntil) return "locked";
+  if (entry?.locked && now >= entry.lockUntil) {
+    rateLimits.delete(key);
+    return "ok";
+  }
+
+  // Check rate
   if (!entry || now > entry.resetAt) {
-    loginAttempts.set(ip, { count: 1, resetAt: now + WINDOW_MS });
-    return false;
+    rateLimits.set(key, { count: 1, resetAt: now + windowMs, locked: false, lockUntil: 0 });
+    return "ok";
   }
   entry.count++;
-  return entry.count > MAX_ATTEMPTS;
+
+  // Lockout after excessive attempts
+  if (lockoutMs > 0 && entry.count > maxAttempts * 2) {
+    entry.locked = true;
+    entry.lockUntil = now + lockoutMs;
+    return "locked";
+  }
+
+  return entry.count > maxAttempts ? "limited" : "ok";
+}
+
+function getClientIP(request: NextRequest): string {
+  return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
 }
 
 // ─── Timing-safe string comparison ──────────────────────────
@@ -56,10 +75,16 @@ export async function proxy(request: NextRequest) {
     return addSecurityHeaders(NextResponse.next());
   }
 
-  // Allow login API (with rate limiting)
+  // Allow login API (with strict rate limiting + lockout)
   if (request.nextUrl.pathname === "/api/login") {
-    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-    if (isRateLimited(ip)) {
+    const ip = getClientIP(request);
+    const status = checkRateLimit(`login:${ip}`, 3, 60_000, 300_000); // 3/min, lockout 5min after 6
+    if (status === "locked") {
+      return addSecurityHeaders(
+        NextResponse.json({ error: "Too many attempts. Locked for 5 minutes." }, { status: 429 })
+      );
+    }
+    if (status === "limited") {
       return addSecurityHeaders(
         NextResponse.json({ error: "Too many attempts. Try again in 1 minute." }, { status: 429 })
       );
@@ -94,6 +119,16 @@ export async function proxy(request: NextRequest) {
   if (authCookie?.value) {
     const expectedToken = await generateToken(password);
     if (safeCompare(authCookie.value, expectedToken)) {
+      // Authenticated — apply rate limits on expensive endpoints
+      if (request.nextUrl.pathname === "/api/audit") {
+        const ip = getClientIP(request);
+        const auditStatus = checkRateLimit(`audit:${ip}`, 3, 60_000);
+        if (auditStatus !== "ok") {
+          return addSecurityHeaders(
+            NextResponse.json({ error: "Audit rate limited. Max 3 per minute." }, { status: 429 })
+          );
+        }
+      }
       return addSecurityHeaders(NextResponse.next());
     }
   }
