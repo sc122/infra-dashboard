@@ -90,7 +90,9 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ ok: true });
-  } catch {
-    return NextResponse.json({ ok: true }); // Always 200 for Telegram
+  } catch (err) {
+    // Log error for debugging but always return 200 for Telegram
+    console.error("Webhook error:", err instanceof Error ? err.message : err);
+    return NextResponse.json({ ok: true, error: err instanceof Error ? err.message : "unknown" });
   }
 }
