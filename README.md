@@ -7,6 +7,8 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)](https://www.typescriptlang.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black)](https://nextjs.org/)
 
+**[Live Demo (mock data)](https://infra-demo-coral.vercel.app)** — try it without connecting any platforms
+
 ---
 
 ## Why?
