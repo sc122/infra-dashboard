@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { listProjects, getProject, listDeployments, getUsage } from "@/lib/api/vercel";
+import { isDemoMode, demoVercelProjects } from "@/lib/demo-data";
 
 export async function GET(request: NextRequest) {
+  if (isDemoMode()) return NextResponse.json(demoVercelProjects);
   try {
     const { searchParams } = request.nextUrl;
     const action = searchParams.get("action") ?? "projects";

@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { listServers, getServer, getServerMetrics } from "@/lib/api/hetzner";
+import { isDemoMode, demoHetznerServers } from "@/lib/demo-data";
 
 export async function GET(request: NextRequest) {
+  if (isDemoMode()) return NextResponse.json(demoHetznerServers);
   try {
     const { searchParams } = request.nextUrl;
     const action = searchParams.get("action") ?? "servers";

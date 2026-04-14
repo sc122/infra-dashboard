@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { listRepos, getRepo, getRepoCommits, listWorkflowRuns, getRepoCICD, extractRepoDeployTarget } from "@/lib/api/github";
+import { isDemoMode, demoGitHubRepos, demoDeployTargets, demoCICD } from "@/lib/demo-data";
 
 export async function GET(request: NextRequest) {
+  if (isDemoMode()) {
+    const action = request.nextUrl.searchParams.get("action") ?? "repos";
+    if (action === "repos") return NextResponse.json(demoGitHubRepos);
+    if (action === "all-deploy-targets") return NextResponse.json({ targets: demoDeployTargets, cicd: demoCICD });
+    return NextResponse.json([]);
+  }
   try {
     const { searchParams } = request.nextUrl;
     const action = searchParams.get("action") ?? "repos";

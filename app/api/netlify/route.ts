@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { listSites, getSite, listDeploys } from "@/lib/api/netlify";
+import { isDemoMode, demoNetlifySites } from "@/lib/demo-data";
 
 export async function GET(request: NextRequest) {
+  if (isDemoMode()) return NextResponse.json(demoNetlifySites);
   try {
     const { searchParams } = request.nextUrl;
     const action = searchParams.get("action") ?? "sites";

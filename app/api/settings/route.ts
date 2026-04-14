@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPlatformStatus } from "@/lib/config";
+import { isDemoMode, demoSettings } from "@/lib/demo-data";
 
 export const dynamic = "force-dynamic";
 
 // GET: return platform connection status + config
 export async function GET() {
+  if (isDemoMode()) return NextResponse.json(demoSettings);
   try {
     const status = getPlatformStatus();
     const platforms = [
