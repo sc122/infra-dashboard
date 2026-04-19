@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Link, usePathname } from "@/i18n/navigation";
 import {
   LayoutDashboard,
   Triangle,
@@ -17,51 +16,57 @@ import {
   ShieldCheck,
   Hexagon,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
+import { LanguageSwitcher } from "@/components/dashboard/language-switcher";
 
-const navSections = [
+type NavItem = { href: string; labelKey: string; icon: React.ComponentType<{ className?: string }> };
+
+const navSections: { sectionKey: string; items: NavItem[] }[] = [
   {
-    label: "כללי",
+    sectionKey: "general",
     items: [
-      { href: "/", label: "סקירה כללית", icon: LayoutDashboard },
-      { href: "/code-map", label: "Code → Deploy", icon: Map },
+      { href: "/", labelKey: "overview", icon: LayoutDashboard },
+      { href: "/code-map", labelKey: "codeMap", icon: Map },
     ],
   },
   {
-    label: "פלטפורמות",
+    sectionKey: "platforms",
     items: [
-      { href: "/github", label: "GitHub", icon: GitBranch },
-      { href: "/vercel", label: "Vercel", icon: Triangle },
-      { href: "/cloudflare", label: "Cloudflare", icon: Cloud },
-      { href: "/vps", label: "VPS - Hetzner", icon: Server },
-      { href: "/netlify", label: "Netlify", icon: Hexagon },
+      { href: "/github", labelKey: "github", icon: GitBranch },
+      { href: "/vercel", labelKey: "vercel", icon: Triangle },
+      { href: "/cloudflare", labelKey: "cloudflare", icon: Cloud },
+      { href: "/vps", labelKey: "vps", icon: Server },
+      { href: "/netlify", labelKey: "netlify", icon: Hexagon },
     ],
   },
   {
-    label: "תשתית",
+    sectionKey: "infrastructure",
     items: [
-      { href: "/domains", label: "מפת דומיינים", icon: Globe },
-      { href: "/health", label: "Health Monitor", icon: Activity },
-      { href: "/costs", label: "עלויות", icon: DollarSign },
-      { href: "/alerts", label: "התראות", icon: Bell },
-      { href: "/audit", label: "ביקורת תשתיות", icon: ShieldCheck },
-      { href: "/settings", label: "הגדרות", icon: Server },
+      { href: "/domains", labelKey: "domains", icon: Globe },
+      { href: "/health", labelKey: "health", icon: Activity },
+      { href: "/costs", labelKey: "costs", icon: DollarSign },
+      { href: "/alerts", labelKey: "alerts", icon: Bell },
+      { href: "/audit", labelKey: "audit", icon: ShieldCheck },
+      { href: "/settings", labelKey: "settings", icon: Server },
     ],
   },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
+  const tSidebar = useTranslations("Sidebar");
+  const tMeta = useTranslations("Metadata");
 
   return (
-    <aside className="w-64 border-l bg-muted/30 flex flex-col h-screen sticky top-0">
+    <aside className="w-64 border-s bg-muted/30 flex flex-col h-screen sticky top-0">
       <div className="p-4 border-b">
         <h1 className="text-lg font-bold flex items-center gap-2">
           <Server className="h-5 w-5" />
           Infra Dashboard
         </h1>
-        <p className="text-xs text-muted-foreground mt-1">מרכז שליטה בתשתיות</p>
+        <p className="text-xs text-muted-foreground mt-1">{tMeta("tagline")}</p>
       </div>
 
       {/* Quick search hint */}
@@ -73,20 +78,21 @@ export function Sidebar() {
           }}
         >
           <Search className="h-3 w-3" />
-          <span className="flex-1 text-right">חיפוש מהיר...</span>
+          <span className="flex-1 text-start">{tSidebar("quickSearch")}</span>
           <kbd className="text-[10px] bg-background px-1 py-0.5 rounded border">⌘K</kbd>
         </button>
       </div>
 
       <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
         {navSections.map((section, si) => (
-          <div key={section.label}>
+          <div key={section.sectionKey}>
             {si > 0 && <Separator className="my-2" />}
             <p className="text-[10px] font-semibold text-muted-foreground px-3 py-1 uppercase tracking-wider">
-              {section.label}
+              {tSidebar(`sections.${section.sectionKey}` as `sections.${"general" | "platforms" | "infrastructure"}`)}
             </p>
             {section.items.map((item) => {
-              const isActive = pathname === item.href ||
+              const isActive =
+                pathname === item.href ||
                 (item.href !== "/" && pathname.startsWith(item.href));
               return (
                 <Link
@@ -100,15 +106,18 @@ export function Sidebar() {
                   )}
                 >
                   <item.icon className="h-4 w-4" />
-                  {item.label}
+                  {tSidebar(`items.${item.labelKey}` as never)}
                 </Link>
               );
             })}
           </div>
         ))}
       </nav>
-      <div className="p-4 border-t text-xs text-muted-foreground">
-        <p>{process.env.NEXT_PUBLIC_DASHBOARD_NAME || "Infra Dashboard"}</p>
+      <div className="p-4 border-t flex items-center justify-between gap-2">
+        <p className="text-xs text-muted-foreground truncate">
+          {process.env.NEXT_PUBLIC_DASHBOARD_NAME || "Infra Dashboard"}
+        </p>
+        <LanguageSwitcher />
       </div>
     </aside>
   );

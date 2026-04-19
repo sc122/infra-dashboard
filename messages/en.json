@@ -1,0 +1,59 @@
+{
+  "Metadata": {
+    "title": "Infra Dashboard — Infrastructure Control Center",
+    "description": "Unified infrastructure control center for Vercel, Cloudflare, and Hetzner",
+    "tagline": "Infrastructure Control Center"
+  },
+  "Sidebar": {
+    "sections": {
+      "general": "General",
+      "platforms": "Platforms",
+      "infrastructure": "Infrastructure"
+    },
+    "items": {
+      "overview": "Overview",
+      "codeMap": "Code → Deploy",
+      "github": "GitHub",
+      "vercel": "Vercel",
+      "cloudflare": "Cloudflare",
+      "vps": "VPS - Hetzner",
+      "netlify": "Netlify",
+      "domains": "Domain Map",
+      "health": "Health Monitor",
+      "costs": "Costs",
+      "alerts": "Alerts",
+      "audit": "Infra Audit",
+      "settings": "Settings"
+    },
+    "quickSearch": "Quick search...",
+    "languageSwitcher": {
+      "label": "Language",
+      "ariaLabel": "Select language"
+    }
+  },
+  "Languages": {
+    "he": "עברית",
+    "en": "English",
+    "ar": "العربية",
+    "ru": "Русский"
+  },
+  "Common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "refresh": "Refresh",
+    "loading": "Loading...",
+    "error": "Error",
+    "retry": "Retry",
+    "search": "Search",
+    "close": "Close"
+  },
+  "CommandPalette": {
+    "placeholder": "Search projects, pages, or settings...",
+    "empty": "No results found.",
+    "groups": {
+      "navigation": "Navigation",
+      "platforms": "Platforms",
+      "actions": "Actions"
+    }
+  }
+}

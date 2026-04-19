@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import createMiddleware from "next-intl/middleware";
+import { routing, isRtl } from "./i18n/routing";
+
+const intlMiddleware = createMiddleware(routing);
 
 // ─── Rate Limiting (in-memory, per-deployment) ──────────────
 const rateLimits = new Map<string, { count: number; resetAt: number; locked: boolean; lockUntil: number }>();
@@ -66,19 +70,82 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
   return response;
 }
 
+// ─── Locale-aware login page ────────────────────────────────
+function detectLocale(pathname: string): string {
+  const first = pathname.split("/")[1];
+  if ((routing.locales as readonly string[]).includes(first)) return first;
+  return routing.defaultLocale;
+}
+
+const loginCopy: Record<string, { title: string; subtitle: string; placeholder: string; button: string; failed: string; network: string }> = {
+  he: { title: "Infra Dashboard", subtitle: "נדרשת הזדהות", placeholder: "סיסמה", button: "התחברות", failed: "ההזדהות נכשלה", network: "שגיאת רשת" },
+  en: { title: "Infra Dashboard", subtitle: "Authentication required", placeholder: "Password", button: "Login", failed: "Authentication failed", network: "Network error" },
+  ar: { title: "Infra Dashboard", subtitle: "المصادقة مطلوبة", placeholder: "كلمة المرور", button: "تسجيل الدخول", failed: "فشلت المصادقة", network: "خطأ في الشبكة" },
+  ru: { title: "Infra Dashboard", subtitle: "Требуется аутентификация", placeholder: "Пароль", button: "Войти", failed: "Ошибка аутентификации", network: "Ошибка сети" },
+};
+
+function renderLoginPage(locale: string): string {
+  const c = loginCopy[locale] ?? loginCopy[routing.defaultLocale];
+  const dir = isRtl(locale) ? "rtl" : "ltr";
+  return `<!DOCTYPE html>
+<html lang="${locale}" dir="${dir}">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${c.button} - ${c.title}</title>
+<style>
+  body{font-family:system-ui;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#0a0a0a;color:#fafafa}
+  .card{background:#18181b;padding:2rem;border-radius:12px;border:1px solid #27272a;max-width:360px;width:100%}
+  h1{margin:0 0 0.5rem;font-size:1.25rem}
+  p{color:#a1a1aa;font-size:0.875rem;margin:0 0 1.5rem}
+  input{width:100%;padding:0.625rem;border:1px solid #27272a;border-radius:8px;background:#09090b;color:#fafafa;font-size:0.875rem;box-sizing:border-box}
+  button{width:100%;padding:0.625rem;border:none;border-radius:8px;background:#fafafa;color:#09090b;font-weight:600;cursor:pointer;margin-top:0.75rem;font-size:0.875rem}
+  button:hover{background:#e4e4e7}
+  .err{color:#f87171;font-size:0.8rem;margin-top:0.5rem;display:none}
+</style></head>
+<body>
+  <div class="card">
+    <h1>${c.title}</h1>
+    <p>${c.subtitle}</p>
+    <form id="f" onsubmit="return login(event)">
+      <input type="password" id="pw" placeholder="${c.placeholder}" autofocus required />
+      <button type="submit" id="btn">${c.button}</button>
+      <div class="err" id="err"></div>
+    </form>
+  </div>
+  <script>
+    var FAILED=${JSON.stringify(c.failed)};
+    var NETWORK=${JSON.stringify(c.network)};
+    var BTN_LABEL=${JSON.stringify(c.button)};
+    async function login(e){
+      e.preventDefault();
+      var b=document.getElementById('btn'),err=document.getElementById('err');
+      b.textContent='...';err.style.display='none';
+      try{
+        var r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:document.getElementById('pw').value})});
+        if(r.ok){window.location.reload();}
+        else{var d=await r.json();err.textContent=d.error||FAILED;err.style.display='block';}
+      }catch(x){err.textContent=NETWORK;err.style.display='block';}
+      b.textContent=BTN_LABEL;
+    }
+  </script>
+</body></html>`;
+}
+
 // ─── Main Proxy ─────────────────────────────────────────────
 export async function proxy(request: NextRequest) {
   const password = process.env.DASHBOARD_PASSWORD;
+  const { pathname } = request.nextUrl;
+  const isApi = pathname.startsWith("/api/");
 
-  // No password = dev mode (no auth)
+  // No password = dev mode (no auth) — still apply intl on UI routes
   if (!password) {
-    return addSecurityHeaders(NextResponse.next());
+    return isApi
+      ? addSecurityHeaders(NextResponse.next())
+      : addSecurityHeaders(intlMiddleware(request));
   }
 
   // Allow login API (with strict rate limiting + lockout)
-  if (request.nextUrl.pathname === "/api/login") {
+  if (pathname === "/api/login") {
     const ip = getClientIP(request);
-    const status = checkRateLimit(`login:${ip}`, 3, 60_000, 300_000); // 3/min, lockout 5min after 6
+    const status = checkRateLimit(`login:${ip}`, 3, 60_000, 300_000);
     if (status === "locked") {
       return addSecurityHeaders(
         NextResponse.json({ error: "Too many attempts. Locked for 5 minutes." }, { status: 429 })
@@ -93,7 +160,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // Allow cron with Vercel's secret
-  if (request.nextUrl.pathname === "/api/cron") {
+  if (pathname === "/api/cron") {
     const authHeader = request.headers.get("authorization");
     const cronSecret = process.env.CRON_SECRET;
     if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
@@ -102,8 +169,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // Allow Telegram webhook (validates chat ID internally)
-  if (request.nextUrl.pathname === "/api/telegram-webhook") {
-    // Verify Telegram secret token if configured
+  if (pathname === "/api/telegram-webhook") {
     const secret = process.env.TELEGRAM_WEBHOOK_SECRET;
     if (secret) {
       const headerSecret = request.headers.get("x-telegram-bot-api-secret-token");
@@ -120,7 +186,7 @@ export async function proxy(request: NextRequest) {
     const expectedToken = await generateToken(password);
     if (safeCompare(authCookie.value, expectedToken)) {
       // Authenticated — apply rate limits on expensive endpoints
-      if (request.nextUrl.pathname === "/api/audit") {
+      if (pathname === "/api/audit") {
         const ip = getClientIP(request);
         const auditStatus = checkRateLimit(`audit:${ip}`, 3, 60_000);
         if (auditStatus !== "ok") {
@@ -129,60 +195,31 @@ export async function proxy(request: NextRequest) {
           );
         }
       }
+      // For UI routes, hand off to next-intl for locale routing
+      if (!isApi) {
+        return addSecurityHeaders(intlMiddleware(request));
+      }
       return addSecurityHeaders(NextResponse.next());
     }
   }
 
   // Not authenticated — API gets 401 JSON
-  if (request.nextUrl.pathname.startsWith("/api/")) {
+  if (isApi) {
     return addSecurityHeaders(
       NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     );
   }
 
-  // Pages get login form (generic error — don't reveal password exists)
+  // Pages get login form in detected locale
+  const locale = detectLocale(pathname);
   return addSecurityHeaders(new NextResponse(
-    `<!DOCTYPE html>
-<html lang="he" dir="rtl">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Login - Infra Dashboard</title>
-<style>
-  body{font-family:system-ui;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#0a0a0a;color:#fafafa}
-  .card{background:#18181b;padding:2rem;border-radius:12px;border:1px solid #27272a;max-width:360px;width:100%}
-  h1{margin:0 0 0.5rem;font-size:1.25rem}
-  p{color:#a1a1aa;font-size:0.875rem;margin:0 0 1.5rem}
-  input{width:100%;padding:0.625rem;border:1px solid #27272a;border-radius:8px;background:#09090b;color:#fafafa;font-size:0.875rem;box-sizing:border-box}
-  button{width:100%;padding:0.625rem;border:none;border-radius:8px;background:#fafafa;color:#09090b;font-weight:600;cursor:pointer;margin-top:0.75rem;font-size:0.875rem}
-  button:hover{background:#e4e4e7}
-  .err{color:#f87171;font-size:0.8rem;margin-top:0.5rem;display:none}
-</style></head>
-<body>
-  <div class="card">
-    <h1>Infra Dashboard</h1>
-    <p>Authentication required</p>
-    <form id="f" onsubmit="return login(event)">
-      <input type="password" id="pw" placeholder="Password" autofocus required />
-      <button type="submit" id="btn">Login</button>
-      <div class="err" id="err"></div>
-    </form>
-  </div>
-  <script>
-    async function login(e){
-      e.preventDefault();
-      var b=document.getElementById('btn'),err=document.getElementById('err');
-      b.textContent='...';err.style.display='none';
-      try{
-        var r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:document.getElementById('pw').value})});
-        if(r.ok){window.location.reload();}
-        else{var d=await r.json();err.textContent=d.error||'Authentication failed';err.style.display='block';}
-      }catch(x){err.textContent='Network error';err.style.display='block';}
-      b.textContent='Login';
-    }
-  </script>
-</body></html>`,
+    renderLoginPage(locale),
     { status: 401, headers: { "Content-Type": "text/html; charset=utf-8" } }
   ));
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  // Skip Next internals, static files, and favicon. API routes still pass through
+  // for auth checks; intl middleware only runs on non-API matched paths.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)"],
 };

@@ -1,0 +1,59 @@
+{
+  "Metadata": {
+    "title": "Infra Dashboard — Центр управления инфраструктурой",
+    "description": "Единый центр управления инфраструктурой для Vercel, Cloudflare и Hetzner",
+    "tagline": "Центр управления инфраструктурой"
+  },
+  "Sidebar": {
+    "sections": {
+      "general": "Общее",
+      "platforms": "Платформы",
+      "infrastructure": "Инфраструктура"
+    },
+    "items": {
+      "overview": "Обзор",
+      "codeMap": "Code → Deploy",
+      "github": "GitHub",
+      "vercel": "Vercel",
+      "cloudflare": "Cloudflare",
+      "vps": "VPS - Hetzner",
+      "netlify": "Netlify",
+      "domains": "Карта доменов",
+      "health": "Health Monitor",
+      "costs": "Расходы",
+      "alerts": "Уведомления",
+      "audit": "Аудит инфраструктуры",
+      "settings": "Настройки"
+    },
+    "quickSearch": "Быстрый поиск...",
+    "languageSwitcher": {
+      "label": "Язык",
+      "ariaLabel": "Выбор языка"
+    }
+  },
+  "Languages": {
+    "he": "עברית",
+    "en": "English",
+    "ar": "العربية",
+    "ru": "Русский"
+  },
+  "Common": {
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "refresh": "Обновить",
+    "loading": "Загрузка...",
+    "error": "Ошибка",
+    "retry": "Повторить",
+    "search": "Поиск",
+    "close": "Закрыть"
+  },
+  "CommandPalette": {
+    "placeholder": "Поиск проектов, страниц или настроек...",
+    "empty": "Ничего не найдено.",
+    "groups": {
+      "navigation": "Навигация",
+      "platforms": "Платформы",
+      "actions": "Действия"
+    }
+  }
+}

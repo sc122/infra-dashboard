@@ -1,0 +1,59 @@
+{
+  "Metadata": {
+    "title": "Infra Dashboard - מרכז שליטה בתשתיות",
+    "description": "מרכז שליטה אחיד לתשתיות ב-Vercel, Cloudflare ו-Hetzner",
+    "tagline": "מרכז שליטה בתשתיות"
+  },
+  "Sidebar": {
+    "sections": {
+      "general": "כללי",
+      "platforms": "פלטפורמות",
+      "infrastructure": "תשתית"
+    },
+    "items": {
+      "overview": "סקירה כללית",
+      "codeMap": "Code → Deploy",
+      "github": "GitHub",
+      "vercel": "Vercel",
+      "cloudflare": "Cloudflare",
+      "vps": "VPS - Hetzner",
+      "netlify": "Netlify",
+      "domains": "מפת דומיינים",
+      "health": "Health Monitor",
+      "costs": "עלויות",
+      "alerts": "התראות",
+      "audit": "ביקורת תשתיות",
+      "settings": "הגדרות"
+    },
+    "quickSearch": "חיפוש מהיר...",
+    "languageSwitcher": {
+      "label": "שפה",
+      "ariaLabel": "בחירת שפה"
+    }
+  },
+  "Languages": {
+    "he": "עברית",
+    "en": "English",
+    "ar": "العربية",
+    "ru": "Русский"
+  },
+  "Common": {
+    "save": "שמור",
+    "cancel": "ביטול",
+    "refresh": "רענן",
+    "loading": "טוען...",
+    "error": "שגיאה",
+    "retry": "נסה שוב",
+    "search": "חיפוש",
+    "close": "סגור"
+  },
+  "CommandPalette": {
+    "placeholder": "חיפוש פרויקטים, דפים, או הגדרות...",
+    "empty": "לא נמצאו תוצאות.",
+    "groups": {
+      "navigation": "ניווט",
+      "platforms": "פלטפורמות",
+      "actions": "פעולות"
+    }
+  }
+}

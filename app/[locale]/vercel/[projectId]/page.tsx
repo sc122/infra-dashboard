@@ -13,7 +13,7 @@ import { ArrowRight, ExternalLink, GitCommit, Settings } from "lucide-react";
 import { MgmtLink } from "@/components/dashboard/mgmt-link";
 import { mgmt } from "@/lib/utils";
 import type { VercelProject, VercelDeployment } from "@/lib/types";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 
 export default function VercelProjectPage() {
   const params = useParams();

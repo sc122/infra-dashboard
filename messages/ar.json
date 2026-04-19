@@ -1,0 +1,59 @@
+{
+  "Metadata": {
+    "title": "Infra Dashboard — مركز التحكم بالبنية التحتية",
+    "description": "مركز تحكم موحد للبنية التحتية على Vercel وCloudflare وHetzner",
+    "tagline": "مركز التحكم بالبنية التحتية"
+  },
+  "Sidebar": {
+    "sections": {
+      "general": "عام",
+      "platforms": "المنصات",
+      "infrastructure": "البنية التحتية"
+    },
+    "items": {
+      "overview": "نظرة عامة",
+      "codeMap": "Code → Deploy",
+      "github": "GitHub",
+      "vercel": "Vercel",
+      "cloudflare": "Cloudflare",
+      "vps": "VPS - Hetzner",
+      "netlify": "Netlify",
+      "domains": "خريطة النطاقات",
+      "health": "Health Monitor",
+      "costs": "التكاليف",
+      "alerts": "التنبيهات",
+      "audit": "تدقيق البنية التحتية",
+      "settings": "الإعدادات"
+    },
+    "quickSearch": "بحث سريع...",
+    "languageSwitcher": {
+      "label": "اللغة",
+      "ariaLabel": "اختيار اللغة"
+    }
+  },
+  "Languages": {
+    "he": "עברית",
+    "en": "English",
+    "ar": "العربية",
+    "ru": "Русский"
+  },
+  "Common": {
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "refresh": "تحديث",
+    "loading": "جارٍ التحميل...",
+    "error": "خطأ",
+    "retry": "إعادة المحاولة",
+    "search": "بحث",
+    "close": "إغلاق"
+  },
+  "CommandPalette": {
+    "placeholder": "ابحث عن المشاريع أو الصفحات أو الإعدادات...",
+    "empty": "لم يتم العثور على نتائج.",
+    "groups": {
+      "navigation": "تنقّل",
+      "platforms": "منصات",
+      "actions": "إجراءات"
+    }
+  }
+}
