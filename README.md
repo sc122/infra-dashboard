@@ -9,7 +9,7 @@
 
 **[Live Demo (mock data)](https://infra-demo-coral.vercel.app)** — try it without connecting any platforms
 
-[![Watch Demo](public/screenshot.png)](https://github.com/sc122/infra-dashboard/releases/download/v1.0.0/infra-dashboard-v2.mp4)
+[![Watch Demo](https://img.youtube.com/vi/JHVdl78EoAM/maxresdefault.jpg)](https://youtu.be/JHVdl78EoAM)
 
 > *Click to watch the 43s demo — auto-discovery, filters, code map, health monitoring, and one-click deploy.*
 
