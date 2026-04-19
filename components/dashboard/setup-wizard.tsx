@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,11 +26,12 @@ export function SetupWizard() {
   const [platforms, setPlatforms] = useState<Platform[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFirstRun, setIsFirstRun] = useState(false);
-  const [step, setStep] = useState(0); // 0=check, 1=welcome, 2=connect, 3=done
+  const [step, setStep] = useState(0);
   const [testing, setTesting] = useState<string | null>(null);
   const [results, setResults] = useState<Record<string, boolean>>({});
   const [tokens, setTokens] = useState<Record<string, string>>({});
   const router = useRouter();
+  const t = useTranslations("SetupWizard");
 
   useEffect(() => {
     fetchApi<{ platforms: Platform[] }>("/api/settings")
@@ -38,7 +40,6 @@ export function SetupWizard() {
         const anyConnected = data.platforms.some((p) => p.connected);
         setIsFirstRun(!anyConnected);
         setStep(anyConnected ? 0 : 1);
-        // Pre-fill results for already connected
         const r: Record<string, boolean> = {};
         data.platforms.forEach((p) => { if (p.connected) r[p.id] = true; });
         setResults(r);
@@ -65,7 +66,6 @@ export function SetupWizard() {
     }
   }
 
-  // Don't show wizard if platforms are already connected
   if (loading || !isFirstRun || step === 0) return null;
 
   const connectedCount = Object.values(results).filter(Boolean).length;
@@ -78,17 +78,16 @@ export function SetupWizard() {
           {step === 1 && (
             <div className="text-center space-y-4">
               <Server className="h-12 w-12 mx-auto text-primary" />
-              <h2 className="text-xl font-bold">ברוך הבא ל-Infra Dashboard</h2>
+              <h2 className="text-xl font-bold">{t("welcome.title")}</h2>
               <p className="text-muted-foreground text-sm">
-                חבר את הפלטפורמות שלך כדי לראות את כל הפרויקטים במקום אחד.
-                תוכל להוסיף ולשנות בכל עת בהגדרות.
+                {t("welcome.description")}
               </p>
               <Button onClick={() => setStep(2)} className="w-full">
-                <Rocket className="h-4 w-4 ml-2" />
-                בוא נתחיל
+                <Rocket className="h-4 w-4 me-2" />
+                {t("welcome.start")}
               </Button>
               <Button variant="ghost" size="sm" onClick={() => { setIsFirstRun(false); router.push("/settings"); }}>
-                דלג — אגדיר אחר כך
+                {t("welcome.skip")}
               </Button>
             </div>
           )}
@@ -97,8 +96,8 @@ export function SetupWizard() {
           {step === 2 && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-bold">חבר פלטפורמות</h2>
-                <Badge variant="secondary">{connectedCount} מחוברים</Badge>
+                <h2 className="text-lg font-bold">{t("connect.title")}</h2>
+                <Badge variant="secondary">{t("connect.connectedCount", { count: connectedCount })}</Badge>
               </div>
 
               <div className="space-y-3 max-h-[400px] overflow-y-auto">
@@ -113,7 +112,7 @@ export function SetupWizard() {
                           <span className="text-sm font-medium">{p.name}</span>
                           {tested === true && <CheckCircle className="h-3 w-3 text-green-500" />}
                           {tested === false && <XCircle className="h-3 w-3 text-red-500" />}
-                          {p.connected && !tokens[p.id] && <Badge variant="outline" className="text-[9px]">כבר מחובר</Badge>}
+                          {p.connected && !tokens[p.id] && <Badge variant="outline" className="text-[9px]">{t("connect.alreadyConnected")}</Badge>}
                         </div>
                         <div className="flex gap-1 mt-1">
                           <input
@@ -126,12 +125,12 @@ export function SetupWizard() {
                           <Button variant="outline" size="sm" className="h-7 text-xs px-2"
                             disabled={!tokens[p.id] || testing === p.id}
                             onClick={() => testToken(p.id)}>
-                            {testing === p.id ? <Loader2 className="h-3 w-3 animate-spin" /> : "בדוק"}
+                            {testing === p.id ? <Loader2 className="h-3 w-3 animate-spin" /> : t("connect.test")}
                           </Button>
                         </div>
                         <a href={p.guideUrl} target="_blank" rel="noopener noreferrer"
                           className="text-[9px] text-blue-500 hover:underline flex items-center gap-0.5 mt-0.5">
-                          <ExternalLink className="h-2.5 w-2.5" /> איך להשיג token
+                          <ExternalLink className="h-2.5 w-2.5" /> {t("connect.howToGetToken")}
                         </a>
                       </div>
                     </div>
@@ -141,10 +140,10 @@ export function SetupWizard() {
 
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => setStep(1)} size="sm">
-                  <ArrowLeft className="h-3 w-3 ml-1" /> חזור
+                  <ArrowLeft className="h-3 w-3 me-1" /> {t("connect.back")}
                 </Button>
                 <Button className="flex-1" onClick={() => setStep(3)} disabled={connectedCount === 0}>
-                  המשך ({connectedCount} מחוברים)
+                  {t("connect.continue", { count: connectedCount })}
                 </Button>
               </div>
             </div>
@@ -154,15 +153,15 @@ export function SetupWizard() {
           {step === 3 && (
             <div className="text-center space-y-4">
               <CheckCircle className="h-12 w-12 mx-auto text-green-500" />
-              <h2 className="text-xl font-bold">הכל מוכן!</h2>
+              <h2 className="text-xl font-bold">{t("done.title")}</h2>
               <p className="text-muted-foreground text-sm">
-                {connectedCount} פלטפורמות מחוברות. הדשבורד יגלה אוטומטית את כל הפרויקטים שלך.
+                {t("done.description", { count: connectedCount })}
               </p>
               <p className="text-xs text-muted-foreground">
-                לשמירת ה-tokens, הוסף אותם כ-environment variables ב-Vercel או ב-<code>.env.local</code>
+                {t("done.tokensHint")}
               </p>
               <Button className="w-full" onClick={() => { setIsFirstRun(false); router.push("/"); }}>
-                פתח דשבורד
+                {t("done.openDashboard")}
               </Button>
             </div>
           )}

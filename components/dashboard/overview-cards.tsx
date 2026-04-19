@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Triangle, Cloud, Server, Container, Activity, Hexagon } from "lucide-react";
 
@@ -15,39 +16,40 @@ export interface PlatformSummary {
 }
 
 export function OverviewCards({ data }: { data: PlatformSummary }) {
+  const t = useTranslations("OverviewCards");
   const cards = [
     {
       title: "Vercel",
       icon: Triangle,
-      value: `${data.vercelProjects} פרויקטים`,
+      value: t("vercelProjects", { count: data.vercelProjects }),
       description: "Next.js & Static sites",
       color: "text-black dark:text-white",
     },
     {
       title: "Netlify",
       icon: Hexagon,
-      value: `${data.netlifyProjects} sites`,
+      value: t("netlifySites", { count: data.netlifyProjects }),
       description: "Static & JAMstack",
       color: "text-teal-500",
     },
     {
       title: "Docker / VPS",
       icon: Container,
-      value: `${data.hetznerServers} servers`,
+      value: t("hetznerServers", { count: data.hetznerServers }),
       description: `Auto-discovered containers`,
       color: "text-blue-500",
     },
     {
       title: "Cloudflare",
       icon: Cloud,
-      value: `${data.cloudflareZones} domains, ${data.cloudflareBuckets} R2`,
+      value: t("cloudflareZones", { count: data.cloudflareZones }),
       description: "DNS, R2, Workers",
       color: "text-orange-500",
     },
     {
       title: "Health",
       icon: Activity,
-      value: `${data.healthUp}/${data.healthTotal} up`,
+      value: t("healthRatio", { up: data.healthUp, total: data.healthTotal }),
       description: data.healthDown > 0 ? `${data.healthDown} services down!` : "All services healthy",
       color: data.healthDown > 0 ? "text-red-500" : "text-green-500",
     },

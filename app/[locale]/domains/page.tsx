@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,6 +22,7 @@ interface DomainMapping {
 }
 
 export default function DomainsPage() {
+  const t = useTranslations("DomainsPage");
   const [mappings, setMappings] = useState<DomainMapping[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -131,9 +133,9 @@ export default function DomainsPage() {
   return (
     <main className="p-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">מפת דומיינים</h1>
+        <h1 className="text-2xl font-bold">{t("title")}</h1>
         <p className="text-muted-foreground">
-          {mappings.length} records מוגדרים &middot; מיפוי domain → platform → service
+          {mappings.length} records · {t("subtitle")}
         </p>
       </div>
 
@@ -145,7 +147,7 @@ export default function DomainsPage() {
                 <Globe className="h-5 w-5" />
                 {root}
               </CardTitle>
-              <MgmtLink href={mgmt.cloudflare.dns(root)} label="ניהול DNS" tooltip="Cloudflare DNS Records" />
+              <MgmtLink href={mgmt.cloudflare.dns(root)} label={t("subtitle")} tooltip="Cloudflare DNS Records" />
             </div>
           </CardHeader>
           <CardContent>

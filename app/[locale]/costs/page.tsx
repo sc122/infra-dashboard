@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UsageBar } from "@/components/dashboard/usage-bar";
@@ -29,6 +30,8 @@ const HETZNER_PRICES: Record<string, number> = {
 };
 
 export default function CostsPage() {
+  const t = useTranslations("CostsPage");
+  const tCommon = useTranslations("Common");
   const [loading, setLoading] = useState(true);
   const [vercelUsage, setVercelUsage] = useState<VercelUsage | null>(null);
   const [cfZones, setCfZones] = useState<CFZone[]>([]);
@@ -79,28 +82,27 @@ export default function CostsPage() {
     <main className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">עלויות וניצולת</h1>
-          <p className="text-muted-foreground">מעקב עלויות וניצולת משאבים לכל הפלטפורמות</p>
+          <h1 className="text-2xl font-bold">{t("title")}</h1>
         </div>
         <Button variant="outline" size="sm" onClick={loadData}>
-          <RefreshCw className="h-4 w-4 ml-2" />
-          רענון
+          <RefreshCw className="h-4 w-4 me-2" />
+          {tCommon("refresh")}
         </Button>
       </div>
 
       {/* Total */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>עלות חודשית כוללת (משוערת)</CardTitle>
+          <CardTitle>{t("totalMonthly")}</CardTitle>
           <DollarSign className="h-5 w-5 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           <div className="text-4xl font-bold">
             €{hetznerTotal.toFixed(2)}
-            <span className="text-sm font-normal text-muted-foreground mr-2">/חודש</span>
+            <span className="text-sm font-normal text-muted-foreground ms-2">{t("perMonth")}</span>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Vercel Hobby (חינם) + Netlify Free (חינם) + Cloudflare Free (חינם) + Hetzner €{hetznerTotal.toFixed(2)}
+            Vercel Hobby (Free) + Netlify Free + Cloudflare Free + Hetzner €{hetznerTotal.toFixed(2)}
           </p>
         </CardContent>
       </Card>
@@ -115,7 +117,7 @@ export default function CostsPage() {
             </CardTitle>
             <div className="flex items-center gap-2">
               <Badge variant="secondary">Hobby (Free)</Badge>
-              <MgmtLink href={mgmt.vercel.usage()} label="ניהול" tooltip="Vercel Usage Dashboard" />
+              <MgmtLink href={mgmt.vercel.usage()} label={tCommon("manage")} tooltip="Vercel Usage Dashboard" />
             </div>
           </div>
         </CardHeader>
@@ -151,7 +153,7 @@ export default function CostsPage() {
               />
             </>
           ) : (
-            <p className="text-sm text-muted-foreground">לא הצלחתי לטעון נתוני usage. ייתכן שה-API לא תומך ב-Hobby plan.</p>
+            <p className="text-sm text-muted-foreground">Usage data unavailable (Hobby plan may not expose this API).</p>
           )}
         </CardContent>
       </Card>
@@ -166,7 +168,7 @@ export default function CostsPage() {
             </CardTitle>
             <div className="flex items-center gap-2">
               <Badge variant="secondary">Free ({netlifySites.length} sites)</Badge>
-              <MgmtLink href={mgmt.netlify.overview()} label="ניהול" tooltip="Netlify Dashboard" />
+              <MgmtLink href={mgmt.netlify.overview()} label={tCommon("manage")} tooltip="Netlify Dashboard" />
             </div>
           </div>
         </CardHeader>
@@ -176,7 +178,7 @@ export default function CostsPage() {
           <UsageBar label="Concurrent Builds" used={0} limit={1} unit="" formatUsed={() => "1 (Free)"} />
           <UsageBar label="Serverless Functions" used={0} limit={125000} unit="req/mo" formatUsed={() => "Free tier"} />
           <div className="text-xs text-muted-foreground">
-            {netlifySites.filter((s) => s.build_settings?.repo_url).length} sites עם repo מקושר · {netlifySites.filter((s) => !s.build_settings?.repo_url).length} manual deploys
+            {netlifySites.filter((s) => s.build_settings?.repo_url).length} sites with linked repo · {netlifySites.filter((s) => !s.build_settings?.repo_url).length} manual deploys
           </div>
         </CardContent>
       </Card>
@@ -195,7 +197,7 @@ export default function CostsPage() {
               </Badge>
               <MgmtLink
                 href={mgmt.cloudflare.zone(cfZones[0]?.name ?? "")}
-                label="ניהול"
+                label={tCommon("manage")}
                 tooltip="Cloudflare Dashboard"
               />
             </div>
@@ -223,7 +225,7 @@ export default function CostsPage() {
             </CardTitle>
             <div className="flex items-center gap-2">
               <Badge variant="secondary">€{hetznerTotal.toFixed(2)}/mo</Badge>
-              <MgmtLink href={mgmt.hetzner.overview()} label="ניהול" tooltip="Hetzner Console" />
+              <MgmtLink href={mgmt.hetzner.overview()} label={tCommon("manage")} tooltip="Hetzner Console" />
             </div>
           </div>
         </CardHeader>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusBadge } from "@/components/dashboard/status-badge";
@@ -13,6 +14,10 @@ import { Hexagon, RefreshCw, GitBranch, ExternalLink } from "lucide-react";
 import type { NetlifySite } from "@/lib/api/netlify";
 
 export default function NetlifyPage() {
+  const t = useTranslations("NetlifyPage");
+  const tCommon = useTranslations("Common");
+  const tTable = useTranslations("UnifiedTable");
+  const locale = useLocale();
   const [sites, setSites] = useState<NetlifySite[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -37,15 +42,15 @@ export default function NetlifyPage() {
     <main className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Netlify</h1>
+          <h1 className="text-2xl font-bold">{t("title")}</h1>
           <p className="text-muted-foreground">
             {sites.length} sites &middot; {withRepo.length} with repo &middot; {withoutRepo.length} manual
           </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={loadData} disabled={loading}>
-            <RefreshCw className={`h-4 w-4 ml-2 ${loading ? "animate-spin" : ""}`} />
-            רענון
+            <RefreshCw className={`h-4 w-4 me-2 ${loading ? "animate-spin" : ""}`} />
+            {tCommon("refresh")}
           </Button>
           <MgmtLink href="https://app.netlify.com" label="Netlify Dashboard" />
         </div>
@@ -62,12 +67,12 @@ export default function NetlifyPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-right">שם</TableHead>
-                  <TableHead className="text-right">סטטוס</TableHead>
-                  <TableHead className="text-right">URL</TableHead>
-                  <TableHead className="text-right">Repo</TableHead>
-                  <TableHead className="text-right">Deploy אחרון</TableHead>
-                  <TableHead className="text-right"></TableHead>
+                  <TableHead className="text-start">{tCommon("name")}</TableHead>
+                  <TableHead className="text-start">{tCommon("status")}</TableHead>
+                  <TableHead className="text-start">URL</TableHead>
+                  <TableHead className="text-start">Repo</TableHead>
+                  <TableHead className="text-start">{t("lastDeploy")}</TableHead>
+                  <TableHead className="text-start"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -101,12 +106,12 @@ export default function NetlifyPage() {
                             {repoName}
                           </a>
                         ) : (
-                          <Badge variant="outline" className="text-[10px]">ידני</Badge>
+                          <Badge variant="outline" className="text-[10px]">{tTable("manual")}</Badge>
                         )}
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">
                         {site.published_deploy?.published_at
-                          ? new Date(site.published_deploy.published_at).toLocaleDateString("he-IL", {
+                          ? new Date(site.published_deploy.published_at).toLocaleDateString(locale, {
                               day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit",
                             })
                           : "-"}

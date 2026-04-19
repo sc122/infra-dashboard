@@ -1,8 +1,10 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 
 export function HealthScore({ score, size = 120 }: { score: number; size?: number }) {
+  const t = useTranslations("HealthScore");
   const radius = (size - 12) / 2;
   const circumference = 2 * Math.PI * radius;
   const progress = (score / 100) * circumference;
@@ -10,7 +12,7 @@ export function HealthScore({ score, size = 120 }: { score: number; size?: numbe
     score >= 80 ? "text-green-500" : score >= 50 ? "text-yellow-500" : "text-red-500";
   const bgColor =
     score >= 80 ? "stroke-green-100" : score >= 50 ? "stroke-yellow-100" : "stroke-red-100";
-  const label = score >= 80 ? "תקין" : score >= 50 ? "דורש תשומת לב" : "קריטי";
+  const label = score >= 80 ? t("healthy") : score >= 50 ? t("needsAttention") : t("critical");
 
   return (
     <div className="flex flex-col items-center gap-2">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +20,9 @@ interface MetricPoint {
 }
 
 export default function VPSPage() {
+  const tCommon = useTranslations("Common");
+  const tPage = useTranslations("VpsPage");
+  const locale = useLocale();
   const [servers, setServers] = useState<HetznerServer[]>([]);
   const [loading, setLoading] = useState(true);
   const [metrics, setMetrics] = useState<Record<number, { cpu: MetricPoint[]; networkIn: MetricPoint[]; networkOut: MetricPoint[]; diskRead: MetricPoint[]; diskWrite: MetricPoint[] }>>({});
@@ -56,7 +60,7 @@ export default function VPSPage() {
           const series = ts[key] ?? Object.values(ts)[0];
           if (!series?.values) return [];
           return series.values.slice(-48).map(([timestamp, val]: [number, string]) => ({
-            time: new Date(timestamp * 1000).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" }),
+            time: new Date(timestamp * 1000).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" }),
             value: parseFloat(val) || 0,
           }));
         };
@@ -96,8 +100,8 @@ export default function VPSPage() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={loadServers}>
-            <RefreshCw className="h-4 w-4 ml-2" />
-            רענון
+            <RefreshCw className="h-4 w-4 me-2" />
+            {tCommon("refresh")}
           </Button>
           <a href={mgmt.hetzner.overview()} target="_blank" rel="noopener noreferrer">
             <Button variant="outline" size="sm">
@@ -111,7 +115,7 @@ export default function VPSPage() {
         <Card>
           <CardContent className="py-10 text-center text-muted-foreground">
             <Server className="h-10 w-10 mx-auto mb-3 opacity-50" />
-            <p>לא נמצאו שרתים. וודא שה-HETZNER_API_TOKEN מוגדר נכון.</p>
+            <p>{tPage("noServers")}</p>
           </CardContent>
         </Card>
       ) : (
@@ -126,7 +130,7 @@ export default function VPSPage() {
                   </CardTitle>
                   <div className="flex items-center gap-2">
                     <StatusBadge status={server.status} />
-                    <MgmtLink href={mgmt.hetzner.server(server.id)} label="ניהול" tooltip="Hetzner Server Console" />
+                    <MgmtLink href={mgmt.hetzner.server(server.id)} label={tCommon("manage")} tooltip="Hetzner Server Console" />
                   </div>
                 </div>
               </CardHeader>
@@ -160,7 +164,7 @@ export default function VPSPage() {
 
                 <div className="mt-4 flex flex-wrap gap-2">
                   <Badge variant="outline">
-                    <MapPin className="h-3 w-3 ml-1" />
+                    <MapPin className="h-3 w-3 me-1" />
                     {server.datacenter?.description ?? server.datacenter?.name}
                   </Badge>
                   {server.image && (

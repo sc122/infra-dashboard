@@ -45,7 +45,22 @@
     "error": "שגיאה",
     "retry": "נסה שוב",
     "search": "חיפוש",
-    "close": "סגור"
+    "close": "סגור",
+    "name": "שם",
+    "status": "סטטוס",
+    "manage": "ניהול",
+    "open": "פתח",
+    "test": "בדוק",
+    "back": "חזור",
+    "continue": "המשך",
+    "skip": "דלג",
+    "noResults": "לא נמצאו תוצאות",
+    "clear": "נקה",
+    "connected": "מחובר",
+    "notConnected": "לא מחובר",
+    "actions": "פעולות",
+    "platform": "פלטפורמה",
+    "project": "פרויקט"
   },
   "CommandPalette": {
     "placeholder": "חיפוש פרויקטים, דפים, או הגדרות...",
@@ -55,5 +70,221 @@
       "platforms": "פלטפורמות",
       "actions": "פעולות"
     }
+  },
+  "StatusBadge": {
+    "healthy": "תקין",
+    "up": "פעיל",
+    "degraded": "חלקי",
+    "down": "נפל",
+    "error": "שגיאה"
+  },
+  "HealthScore": {
+    "healthy": "תקין",
+    "needsAttention": "דורש תשומת לב",
+    "critical": "קריטי"
+  },
+  "FilterBar": {
+    "searchPlaceholder": "חיפוש...",
+    "clear": "נקה"
+  },
+  "MetricsChart": {
+    "noData": "אין נתונים זמינים"
+  },
+  "UnifiedTable": {
+    "platform": "פלטפורמה",
+    "project": "פרויקט",
+    "status": "סטטוס",
+    "manual": "ידני",
+    "clickToShow": "לחץ להצגה"
+  },
+  "OverviewCards": {
+    "vercelProjects": "{count, plural, one {פרויקט אחד} other {{count} פרויקטים}}",
+    "netlifySites": "{count, plural, one {אתר אחד} other {{count} אתרים}}",
+    "cloudflareZones": "{count, plural, one {Zone אחד} other {{count} Zones}}",
+    "hetznerServers": "{count, plural, one {שרת אחד} other {{count} שרתים}}",
+    "healthRatio": "{up}/{total} פעילים"
+  },
+  "SetupWizard": {
+    "welcome": {
+      "title": "ברוך הבא ל-Infra Dashboard",
+      "description": "חבר את הפלטפורמות שלך כדי לראות את כל הפרויקטים במקום אחד. תוכל להוסיף ולשנות בכל עת בהגדרות.",
+      "start": "בוא נתחיל",
+      "skip": "דלג — אגדיר אחר כך"
+    },
+    "connect": {
+      "title": "חבר פלטפורמות",
+      "connectedCount": "{count} מחוברים",
+      "alreadyConnected": "כבר מחובר",
+      "test": "בדוק",
+      "howToGetToken": "איך להשיג token",
+      "back": "חזור",
+      "continue": "המשך ({count} מחוברים)"
+    },
+    "done": {
+      "title": "הכל מוכן!",
+      "description": "{count} פלטפורמות מחוברות. הדשבורד יגלה אוטומטית את כל הפרויקטים שלך.",
+      "tokensHint": "לשמירת ה-tokens, הוסף אותם כ-environment variables ב-Vercel או ב-.env.local",
+      "openDashboard": "פתח דשבורד"
+    }
+  },
+  "HomePage": {
+    "title": "סקירה כללית",
+    "subtitle": "{count} פרויקטים מזוהים אוטומטית",
+    "refresh": "רענון",
+    "allProjects": "כל הפרויקטים",
+    "noFilterResults": "אין תוצאות לפילטרים הנוכחיים"
+  },
+  "AlertsPage": {
+    "title": "התראות",
+    "subtitle": "הגדרת התראות Telegram",
+    "telegramSetupTitle": "הגדרה:",
+    "telegramSteps": {
+      "step1": "פתח @BotFather בטלגרם ושלח /newbot",
+      "step2": "תן שם לבוט (למשל: Infra Dashboard Bot)",
+      "step3": "העתק את ה-Token ושים ב-TELEGRAM_BOT_TOKEN",
+      "step4": "שלח הודעה לבוט ואז גש ל-https://api.telegram.org/bot<TOKEN>/getUpdates",
+      "step5": "העתק את ה-chat_id ושים ב-TELEGRAM_CHAT_ID"
+    },
+    "sendTest": "שלח הודעת בדיקה",
+    "sentSuccess": "נשלח בהצלחה!",
+    "errorPrefix": "שגיאה: {error}",
+    "alertTypesTitle": "סוגי התראות",
+    "types": {
+      "criticalServiceDownTitle": "Critical - שירות נפל",
+      "criticalServiceDownDesc": "התראה מיידית כשפרויקט לא מגיב לבדיקת health check",
+      "criticalVpsDownTitle": "Critical - VPS לא מגיב",
+      "criticalVpsDownDesc": "כששרת Hetzner לא מגיב ל-API",
+      "warningDeployFailedTitle": "Warning - Deploy נכשל",
+      "warningDeployFailedDesc": "כש-Vercel deployment נכשל",
+      "warningSslExpiringTitle": "Warning - SSL פג תוקף",
+      "warningSslExpiringDesc": "כשתעודת SSL עומדת לפוג ב-14 הימים הקרובים",
+      "infoCostsExceededTitle": "Info - חריגה בעלויות",
+      "infoCostsExceededDesc": "כשעלות חודשית חורגת מהתקציב שהוגדר"
+    },
+    "scheduleTitle": "לוח זמנים",
+    "scheduleDescription": "Health check רץ כל 5 דקות דרך Vercel Cron Jobs. התראות נשלחות רק כשיש בעיה (לא כל 5 דקות)."
+  },
+  "AuditPage": {
+    "title": "ביקורת תשתיות",
+    "subtitleFmt": "ניתוח אוטומטי · {when} · {rules} rules",
+    "loadError": "שגיאה בטעינת הביקורת",
+    "runAudit": "הרץ ביקורת",
+    "categories": {
+      "security": "אבטחה",
+      "deployment": "Deployment",
+      "cicd": "CI/CD",
+      "cleanup": "ניקיון",
+      "performance": "ביצועים"
+    },
+    "severity": {
+      "critical": "קריטי",
+      "warning": "אזהרה",
+      "info": "מידע"
+    },
+    "summary": {
+      "total": "סה\"כ ממצאים",
+      "critical": "קריטי",
+      "warning": "אזהרות",
+      "info": "מידע"
+    },
+    "all": "הכל",
+    "open": "פתח"
+  },
+  "SettingsPage": {
+    "title": "הגדרות",
+    "subtitle": "ניהול פלטפורמות, התראות, והגדרות כלליות",
+    "tabs": {
+      "platforms": "פלטפורמות",
+      "notifications": "התראות",
+      "general": "כללי"
+    },
+    "platforms": {
+      "intro": "חבר פלטפורמות כדי לראות את הפרויקטים שלך בדשבורד. Tokens נשמרים כ-environment variables מוצפנים.",
+      "enterTokenPlaceholder": "הזן {tokenVar}",
+      "test": "בדוק",
+      "howToGet": "איך להשיג {tokenVar}?",
+      "vercelEnvHint": "Tokens נשמרים כ-Vercel Environment Variables (מוצפנים at rest). להוספה/עדכון: vercel env add TOKEN_NAME production"
+    },
+    "telegram": {
+      "title": "Telegram Bot",
+      "setupHeading": "הגדרה:",
+      "step1": "פתח @BotFather בטלגרם → /newbot",
+      "step2": "העתק token → הגדר כ-TELEGRAM_BOT_TOKEN",
+      "step3": "שלח הודעה לבוט, אז גש ל-/getUpdates API",
+      "step4": "העתק chat_id → הגדר כ-TELEGRAM_CHAT_ID",
+      "activeAlertsHeading": "התראות פעילות:",
+      "dailyReport": "דוח יומי (8:00)",
+      "serviceDown": "שירות נפל",
+      "criticalFinding": "ממצא קריטי",
+      "botCommands": "פקודות בוט (/status, /health, /audit)"
+    },
+    "general": {
+      "title": "הגדרות כלליות",
+      "dashboardName": "שם הדשבורד",
+      "githubUsername": "GitHub Username",
+      "vercelTeam": "Vercel Team",
+      "vpsDeployDomain": "VPS Deploy Domain",
+      "changeHint": "לשינוי הגדרות: עדכן env vars ב-Vercel Dashboard או דרך vercel env add"
+    }
+  },
+  "ListPage": {
+    "refresh": "רענון",
+    "name": "שם",
+    "status": "סטטוס",
+    "lastDeploy": "Deploy אחרון",
+    "lastPush": "Push אחרון",
+    "manage": "ניהול",
+    "noServers": "לא נמצאו שרתים",
+    "noProjects": "לא נמצאו פרויקטים"
+  },
+  "VercelPage": {
+    "title": "Vercel Projects",
+    "domains": "דומיינים",
+    "openSite": "פתח אתר",
+    "lastDeploy": "Deploy אחרון",
+    "lastCommit": "Commit אחרון"
+  },
+  "GithubPage": {
+    "title": "GitHub Repositories",
+    "lastPush": "Push אחרון"
+  },
+  "VpsPage": {
+    "title": "VPS - Hetzner",
+    "noServers": "לא נמצאו שרתים",
+    "manage": "ניהול"
+  },
+  "NetlifyPage": {
+    "title": "Netlify Sites",
+    "lastDeploy": "Deploy אחרון"
+  },
+  "CloudflarePage": {
+    "title": "Cloudflare",
+    "subtitle": "דומיינים, DNS, ו-R2 Storage",
+    "name": "שם",
+    "createdAt": "תאריך יצירה"
+  },
+  "CostsPage": {
+    "title": "עלויות וניצולת",
+    "totalMonthly": "עלות חודשית כוללת",
+    "perMonth": "/חודש",
+    "manage": "ניהול"
+  },
+  "CodeMapPage": {
+    "title": "מיפוי: קוד → פלטפורמה",
+    "subtitle": "ה-repos שלך והיכן הם מתפרסמים",
+    "connectedRepos": "repos מחוברים",
+    "noDeployment": "ללא deployment",
+    "private": "Private",
+    "searchPlaceholder": "חיפוש..."
+  },
+  "DomainsPage": {
+    "title": "מפת דומיינים",
+    "subtitle": "ניהול DNS"
+  },
+  "HealthPage": {
+    "title": "Health Monitor",
+    "subtitle": "בדיקת זמינות...",
+    "checkNow": "בדוק עכשיו",
+    "results": "תוצאות"
   }
 }

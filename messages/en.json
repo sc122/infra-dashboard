@@ -45,7 +45,22 @@
     "error": "Error",
     "retry": "Retry",
     "search": "Search",
-    "close": "Close"
+    "close": "Close",
+    "name": "Name",
+    "status": "Status",
+    "manage": "Manage",
+    "open": "Open",
+    "test": "Test",
+    "back": "Back",
+    "continue": "Continue",
+    "skip": "Skip",
+    "noResults": "No results",
+    "clear": "Clear",
+    "connected": "Connected",
+    "notConnected": "Not connected",
+    "actions": "Actions",
+    "platform": "Platform",
+    "project": "Project"
   },
   "CommandPalette": {
     "placeholder": "Search projects, pages, or settings...",
@@ -55,5 +70,221 @@
       "platforms": "Platforms",
       "actions": "Actions"
     }
+  },
+  "StatusBadge": {
+    "healthy": "Healthy",
+    "up": "Up",
+    "degraded": "Degraded",
+    "down": "Down",
+    "error": "Error"
+  },
+  "HealthScore": {
+    "healthy": "Healthy",
+    "needsAttention": "Needs attention",
+    "critical": "Critical"
+  },
+  "FilterBar": {
+    "searchPlaceholder": "Search...",
+    "clear": "Clear"
+  },
+  "MetricsChart": {
+    "noData": "No data available"
+  },
+  "UnifiedTable": {
+    "platform": "Platform",
+    "project": "Project",
+    "status": "Status",
+    "manual": "Manual",
+    "clickToShow": "Click to show"
+  },
+  "OverviewCards": {
+    "vercelProjects": "{count, plural, one {1 project} other {{count} projects}}",
+    "netlifySites": "{count, plural, one {1 site} other {{count} sites}}",
+    "cloudflareZones": "{count, plural, one {1 zone} other {{count} zones}}",
+    "hetznerServers": "{count, plural, one {1 server} other {{count} servers}}",
+    "healthRatio": "{up}/{total} up"
+  },
+  "SetupWizard": {
+    "welcome": {
+      "title": "Welcome to Infra Dashboard",
+      "description": "Connect your platforms to see all your projects in one place. You can add and change them anytime in Settings.",
+      "start": "Let's start",
+      "skip": "Skip — I'll set up later"
+    },
+    "connect": {
+      "title": "Connect platforms",
+      "connectedCount": "{count} connected",
+      "alreadyConnected": "Already connected",
+      "test": "Test",
+      "howToGetToken": "How to get a token",
+      "back": "Back",
+      "continue": "Continue ({count} connected)"
+    },
+    "done": {
+      "title": "All set!",
+      "description": "{count} platforms connected. The dashboard will auto-discover all your projects.",
+      "tokensHint": "To persist tokens, add them as environment variables on Vercel or in .env.local",
+      "openDashboard": "Open dashboard"
+    }
+  },
+  "HomePage": {
+    "title": "Overview",
+    "subtitle": "{count} projects auto-discovered",
+    "refresh": "Refresh",
+    "allProjects": "All projects",
+    "noFilterResults": "No results for the current filters"
+  },
+  "AlertsPage": {
+    "title": "Alerts",
+    "subtitle": "Configure Telegram alerts",
+    "telegramSetupTitle": "Setup:",
+    "telegramSteps": {
+      "step1": "Open @BotFather in Telegram and send /newbot",
+      "step2": "Give the bot a name (e.g., Infra Dashboard Bot)",
+      "step3": "Copy the token and put it in TELEGRAM_BOT_TOKEN",
+      "step4": "Send a message to the bot, then visit https://api.telegram.org/bot<TOKEN>/getUpdates",
+      "step5": "Copy the chat_id and put it in TELEGRAM_CHAT_ID"
+    },
+    "sendTest": "Send test message",
+    "sentSuccess": "Sent successfully!",
+    "errorPrefix": "Error: {error}",
+    "alertTypesTitle": "Alert types",
+    "types": {
+      "criticalServiceDownTitle": "Critical — service down",
+      "criticalServiceDownDesc": "Immediate alert when a project fails its health check",
+      "criticalVpsDownTitle": "Critical — VPS unreachable",
+      "criticalVpsDownDesc": "When a Hetzner server stops responding to the API",
+      "warningDeployFailedTitle": "Warning — deploy failed",
+      "warningDeployFailedDesc": "When a Vercel deployment fails",
+      "warningSslExpiringTitle": "Warning — SSL expiring",
+      "warningSslExpiringDesc": "When an SSL certificate is about to expire within 14 days",
+      "infoCostsExceededTitle": "Info — cost overrun",
+      "infoCostsExceededDesc": "When monthly cost exceeds the configured budget"
+    },
+    "scheduleTitle": "Schedule",
+    "scheduleDescription": "Health check runs every 5 minutes via Vercel Cron Jobs. Alerts are sent only on issues (not every 5 minutes)."
+  },
+  "AuditPage": {
+    "title": "Infrastructure audit",
+    "subtitleFmt": "Automated analysis · {when} · {rules} rules",
+    "loadError": "Failed to load the audit",
+    "runAudit": "Run audit",
+    "categories": {
+      "security": "Security",
+      "deployment": "Deployment",
+      "cicd": "CI/CD",
+      "cleanup": "Cleanup",
+      "performance": "Performance"
+    },
+    "severity": {
+      "critical": "Critical",
+      "warning": "Warning",
+      "info": "Info"
+    },
+    "summary": {
+      "total": "Total findings",
+      "critical": "Critical",
+      "warning": "Warnings",
+      "info": "Info"
+    },
+    "all": "All",
+    "open": "Open"
+  },
+  "SettingsPage": {
+    "title": "Settings",
+    "subtitle": "Manage platforms, alerts, and general settings",
+    "tabs": {
+      "platforms": "Platforms",
+      "notifications": "Notifications",
+      "general": "General"
+    },
+    "platforms": {
+      "intro": "Connect platforms to see your projects in the dashboard. Tokens are stored as encrypted environment variables.",
+      "enterTokenPlaceholder": "Enter {tokenVar}",
+      "test": "Test",
+      "howToGet": "How to get {tokenVar}?",
+      "vercelEnvHint": "Tokens are stored as Vercel Environment Variables (encrypted at rest). To add/update: vercel env add TOKEN_NAME production"
+    },
+    "telegram": {
+      "title": "Telegram Bot",
+      "setupHeading": "Setup:",
+      "step1": "Open @BotFather in Telegram → /newbot",
+      "step2": "Copy the token → set as TELEGRAM_BOT_TOKEN",
+      "step3": "Send a message to the bot, then visit /getUpdates API",
+      "step4": "Copy the chat_id → set as TELEGRAM_CHAT_ID",
+      "activeAlertsHeading": "Active alerts:",
+      "dailyReport": "Daily report (08:00)",
+      "serviceDown": "Service down",
+      "criticalFinding": "Critical finding",
+      "botCommands": "Bot commands (/status, /health, /audit)"
+    },
+    "general": {
+      "title": "General settings",
+      "dashboardName": "Dashboard name",
+      "githubUsername": "GitHub username",
+      "vercelTeam": "Vercel team",
+      "vpsDeployDomain": "VPS deploy domain",
+      "changeHint": "To change settings: update env vars in the Vercel dashboard or via vercel env add"
+    }
+  },
+  "ListPage": {
+    "refresh": "Refresh",
+    "name": "Name",
+    "status": "Status",
+    "lastDeploy": "Last deploy",
+    "lastPush": "Last push",
+    "manage": "Manage",
+    "noServers": "No servers found",
+    "noProjects": "No projects found"
+  },
+  "VercelPage": {
+    "title": "Vercel Projects",
+    "domains": "Domains",
+    "openSite": "Open site",
+    "lastDeploy": "Last deploy",
+    "lastCommit": "Last commit"
+  },
+  "GithubPage": {
+    "title": "GitHub Repositories",
+    "lastPush": "Last push"
+  },
+  "VpsPage": {
+    "title": "VPS - Hetzner",
+    "noServers": "No servers found",
+    "manage": "Manage"
+  },
+  "NetlifyPage": {
+    "title": "Netlify Sites",
+    "lastDeploy": "Last deploy"
+  },
+  "CloudflarePage": {
+    "title": "Cloudflare",
+    "subtitle": "Domains, DNS, and R2 Storage",
+    "name": "Name",
+    "createdAt": "Created at"
+  },
+  "CostsPage": {
+    "title": "Costs & utilization",
+    "totalMonthly": "Total monthly cost",
+    "perMonth": "/month",
+    "manage": "Manage"
+  },
+  "CodeMapPage": {
+    "title": "Map: code → platform",
+    "subtitle": "Your repos and where they're deployed",
+    "connectedRepos": "connected repos",
+    "noDeployment": "No deployment",
+    "private": "Private",
+    "searchPlaceholder": "Search..."
+  },
+  "DomainsPage": {
+    "title": "Domain map",
+    "subtitle": "DNS management"
+  },
+  "HealthPage": {
+    "title": "Health Monitor",
+    "subtitle": "Availability check...",
+    "checkNow": "Check now",
+    "results": "Results"
   }
 }

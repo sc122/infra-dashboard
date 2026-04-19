@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,20 +17,23 @@ import {
 import type { AuditReport, AuditFinding } from "@/lib/types";
 
 const categoryConfig = {
-  security: { label: "אבטחה", icon: Shield, color: "text-red-500" },
-  deployment: { label: "Deployment", icon: Rocket, color: "text-blue-500" },
-  cicd: { label: "CI/CD", icon: Settings, color: "text-purple-500" },
-  cleanup: { label: "ניקיון", icon: Trash2, color: "text-orange-500" },
-  performance: { label: "ביצועים", icon: Zap, color: "text-yellow-500" },
-};
+  security: { icon: Shield, color: "text-red-500" },
+  deployment: { icon: Rocket, color: "text-blue-500" },
+  cicd: { icon: Settings, color: "text-purple-500" },
+  cleanup: { icon: Trash2, color: "text-orange-500" },
+  performance: { icon: Zap, color: "text-yellow-500" },
+} as const;
 
 const severityConfig = {
-  critical: { label: "קריטי", icon: XCircle, className: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200" },
-  warning: { label: "אזהרה", icon: AlertTriangle, className: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200" },
-  info: { label: "מידע", icon: Info, className: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200" },
-};
+  critical: { icon: XCircle, className: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200" },
+  warning: { icon: AlertTriangle, className: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200" },
+  info: { icon: Info, className: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200" },
+} as const;
 
 export default function AuditPage() {
+  const t = useTranslations("AuditPage");
+  const tCommon = useTranslations("Common");
+  const locale = useLocale();
   const [report, setReport] = useState<AuditReport | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -63,8 +67,8 @@ export default function AuditPage() {
   if (!report) {
     return (
       <main className="p-6">
-        <p className="text-muted-foreground">שגיאה בטעינת הביקורת</p>
-        <Button onClick={runAudit} className="mt-4">נסה שוב</Button>
+        <p className="text-muted-foreground">{t("loadError")}</p>
+        <Button onClick={runAudit} className="mt-4">{tCommon("retry")}</Button>
       </main>
     );
   }
@@ -80,9 +84,9 @@ export default function AuditPage() {
     <main className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">ביקורת תשתיות</h1>
+          <h1 className="text-2xl font-bold">{t("title")}</h1>
           <p className="text-muted-foreground">
-            ניתוח אוטומטי · {new Date(report.generatedAt).toLocaleString("he-IL")} · {report.rulesRun ?? 0} rules
+            {t("subtitleFmt", { when: new Date(report.generatedAt).toLocaleString(locale), rules: report.rulesRun ?? 0 })}
           </p>
           {/* Data source indicators */}
           {report.dataSources && (
@@ -98,8 +102,8 @@ export default function AuditPage() {
           )}
         </div>
         <Button variant="outline" size="sm" onClick={runAudit} disabled={loading}>
-          <RefreshCw className={`h-4 w-4 ml-2 ${loading ? "animate-spin" : ""}`} />
-          הרץ ביקורת
+          <RefreshCw className={`h-4 w-4 me-2 ${loading ? "animate-spin" : ""}`} />
+          {t("runAudit")}
         </Button>
       </div>
 
@@ -113,25 +117,25 @@ export default function AuditPage() {
           <Card>
             <CardContent className="pt-4 text-center">
               <div className="text-3xl font-bold">{report.summary.total}</div>
-              <p className="text-xs text-muted-foreground">סה&quot;כ ממצאים</p>
+              <p className="text-xs text-muted-foreground">{t("summary.total")}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-4 text-center">
               <div className="text-3xl font-bold text-red-500">{report.summary.critical}</div>
-              <p className="text-xs text-muted-foreground">קריטי</p>
+              <p className="text-xs text-muted-foreground">{t("summary.critical")}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-4 text-center">
               <div className="text-3xl font-bold text-yellow-500">{report.summary.warning}</div>
-              <p className="text-xs text-muted-foreground">אזהרות</p>
+              <p className="text-xs text-muted-foreground">{t("summary.warning")}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-4 text-center">
               <div className="text-3xl font-bold text-blue-500">{report.summary.info}</div>
-              <p className="text-xs text-muted-foreground">מידע</p>
+              <p className="text-xs text-muted-foreground">{t("summary.info")}</p>
             </CardContent>
           </Card>
         </div>
@@ -141,7 +145,7 @@ export default function AuditPage() {
       <Tabs defaultValue="all" className="space-y-4">
         <TabsList className="flex-wrap h-auto gap-1">
           <TabsTrigger value="all">
-            הכל ({report.findings.length})
+            {t("all")} ({report.findings.length})
           </TabsTrigger>
           {categories.map((cat) => {
             const config = categoryConfig[cat];
@@ -150,7 +154,7 @@ export default function AuditPage() {
             return (
               <TabsTrigger key={cat} value={cat} className="gap-1">
                 <config.icon className={`h-3 w-3 ${config.color}`} />
-                {config.label} ({count})
+                {t(`categories.${cat}`)} ({count})
               </TabsTrigger>
             );
           })}
@@ -179,6 +183,7 @@ export default function AuditPage() {
 }
 
 function FindingCard({ finding: f }: { finding: AuditFinding }) {
+  const t = useTranslations("AuditPage");
   const sev = severityConfig[f.severity];
   const cat = categoryConfig[f.category];
   const SevIcon = sev.icon;
@@ -197,11 +202,11 @@ function FindingCard({ finding: f }: { finding: AuditFinding }) {
             <div className="flex items-center gap-2 mb-1 flex-wrap">
               <h3 className="font-semibold text-sm">{f.title}</h3>
               <Badge variant="outline" className={sev.className}>
-                {sev.label}
+                {t(`severity.${f.severity}`)}
               </Badge>
               <Badge variant="secondary" className="text-[10px] gap-1">
                 <cat.icon className="h-3 w-3" />
-                {cat.label}
+                {t(`categories.${f.category}`)}
               </Badge>
             </div>
             <p className="text-sm text-muted-foreground mb-2">{f.description}</p>
@@ -211,7 +216,7 @@ function FindingCard({ finding: f }: { finding: AuditFinding }) {
                 <span>{f.recommendation}</span>
               </div>
               {f.resource.url && (
-                <MgmtLink href={f.resource.url} label="פתח" tooltip={`${f.resource.platform}: ${f.resource.name}`} />
+                <MgmtLink href={f.resource.url} label={t("open")} tooltip={`${f.resource.platform}: ${f.resource.name}`} />
               )}
             </div>
           </div>

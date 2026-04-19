@@ -45,7 +45,22 @@
     "error": "خطأ",
     "retry": "إعادة المحاولة",
     "search": "بحث",
-    "close": "إغلاق"
+    "close": "إغلاق",
+    "name": "الاسم",
+    "status": "الحالة",
+    "manage": "إدارة",
+    "open": "فتح",
+    "test": "اختبار",
+    "back": "رجوع",
+    "continue": "متابعة",
+    "skip": "تخطي",
+    "noResults": "لا نتائج",
+    "clear": "مسح",
+    "connected": "متصل",
+    "notConnected": "غير متصل",
+    "actions": "إجراءات",
+    "platform": "المنصة",
+    "project": "المشروع"
   },
   "CommandPalette": {
     "placeholder": "ابحث عن المشاريع أو الصفحات أو الإعدادات...",
@@ -55,5 +70,221 @@
       "platforms": "منصات",
       "actions": "إجراءات"
     }
+  },
+  "StatusBadge": {
+    "healthy": "سليم",
+    "up": "نشط",
+    "degraded": "متدهور",
+    "down": "متوقف",
+    "error": "خطأ"
+  },
+  "HealthScore": {
+    "healthy": "سليم",
+    "needsAttention": "يحتاج إلى انتباه",
+    "critical": "حرج"
+  },
+  "FilterBar": {
+    "searchPlaceholder": "بحث...",
+    "clear": "مسح"
+  },
+  "MetricsChart": {
+    "noData": "لا تتوفر بيانات"
+  },
+  "UnifiedTable": {
+    "platform": "المنصة",
+    "project": "المشروع",
+    "status": "الحالة",
+    "manual": "يدوي",
+    "clickToShow": "اضغط للعرض"
+  },
+  "OverviewCards": {
+    "vercelProjects": "{count, plural, zero {لا مشاريع} one {مشروع واحد} two {مشروعان} few {{count} مشاريع} many {{count} مشروعًا} other {{count} مشروع}}",
+    "netlifySites": "{count, plural, zero {لا مواقع} one {موقع واحد} two {موقعان} few {{count} مواقع} many {{count} موقعًا} other {{count} موقع}}",
+    "cloudflareZones": "{count, plural, zero {لا zones} one {zone واحد} two {zoneان} few {{count} zones} many {{count} zone} other {{count} zone}}",
+    "hetznerServers": "{count, plural, zero {لا خوادم} one {خادم واحد} two {خادمان} few {{count} خوادم} many {{count} خادمًا} other {{count} خادم}}",
+    "healthRatio": "{up}/{total} نشط"
+  },
+  "SetupWizard": {
+    "welcome": {
+      "title": "مرحبًا بك في Infra Dashboard",
+      "description": "اربط منصاتك لرؤية كل مشاريعك في مكان واحد. يمكنك الإضافة والتعديل في أي وقت من الإعدادات.",
+      "start": "هيا نبدأ",
+      "skip": "تخطي — سأقوم بالإعداد لاحقًا"
+    },
+    "connect": {
+      "title": "اربط المنصات",
+      "connectedCount": "{count} متصل",
+      "alreadyConnected": "متصل بالفعل",
+      "test": "اختبار",
+      "howToGetToken": "كيف أحصل على token",
+      "back": "رجوع",
+      "continue": "متابعة ({count} متصل)"
+    },
+    "done": {
+      "title": "كل شيء جاهز!",
+      "description": "{count} منصات متصلة. ستكتشف لوحة التحكم كل مشاريعك تلقائيًا.",
+      "tokensHint": "للحفاظ على الـ tokens أضفها كمتغيرات بيئة في Vercel أو في .env.local",
+      "openDashboard": "افتح اللوحة"
+    }
+  },
+  "HomePage": {
+    "title": "نظرة عامة",
+    "subtitle": "{count} مشروعًا تم اكتشافه تلقائيًا",
+    "refresh": "تحديث",
+    "allProjects": "كل المشاريع",
+    "noFilterResults": "لا توجد نتائج للفلاتر الحالية"
+  },
+  "AlertsPage": {
+    "title": "التنبيهات",
+    "subtitle": "إعداد تنبيهات Telegram",
+    "telegramSetupTitle": "الإعداد:",
+    "telegramSteps": {
+      "step1": "افتح @BotFather في Telegram وأرسل /newbot",
+      "step2": "أعطِ البوت اسمًا (مثلاً: Infra Dashboard Bot)",
+      "step3": "انسخ الـ Token وضعه في TELEGRAM_BOT_TOKEN",
+      "step4": "أرسل رسالة للبوت ثم زُر https://api.telegram.org/bot<TOKEN>/getUpdates",
+      "step5": "انسخ chat_id وضعه في TELEGRAM_CHAT_ID"
+    },
+    "sendTest": "إرسال رسالة اختبار",
+    "sentSuccess": "تم الإرسال بنجاح!",
+    "errorPrefix": "خطأ: {error}",
+    "alertTypesTitle": "أنواع التنبيهات",
+    "types": {
+      "criticalServiceDownTitle": "Critical — توقف الخدمة",
+      "criticalServiceDownDesc": "تنبيه فوري عندما يفشل المشروع في فحص الصحة",
+      "criticalVpsDownTitle": "Critical — VPS غير متاح",
+      "criticalVpsDownDesc": "عندما يتوقف خادم Hetzner عن الاستجابة لـ API",
+      "warningDeployFailedTitle": "Warning — فشل النشر",
+      "warningDeployFailedDesc": "عندما يفشل نشر Vercel",
+      "warningSslExpiringTitle": "Warning — انتهاء SSL",
+      "warningSslExpiringDesc": "عندما توشك شهادة SSL على الانتهاء خلال 14 يومًا",
+      "infoCostsExceededTitle": "Info — تجاوز التكاليف",
+      "infoCostsExceededDesc": "عندما تتجاوز التكلفة الشهرية الميزانية المحددة"
+    },
+    "scheduleTitle": "الجدول",
+    "scheduleDescription": "يعمل فحص الصحة كل 5 دقائق عبر Vercel Cron Jobs. ترسل التنبيهات فقط عند وجود مشكلة (وليس كل 5 دقائق)."
+  },
+  "AuditPage": {
+    "title": "تدقيق البنية التحتية",
+    "subtitleFmt": "تحليل تلقائي · {when} · {rules} rules",
+    "loadError": "فشل تحميل التدقيق",
+    "runAudit": "تشغيل التدقيق",
+    "categories": {
+      "security": "الأمان",
+      "deployment": "النشر",
+      "cicd": "CI/CD",
+      "cleanup": "تنظيف",
+      "performance": "الأداء"
+    },
+    "severity": {
+      "critical": "حرج",
+      "warning": "تحذير",
+      "info": "معلومات"
+    },
+    "summary": {
+      "total": "إجمالي النتائج",
+      "critical": "حرج",
+      "warning": "تحذيرات",
+      "info": "معلومات"
+    },
+    "all": "الكل",
+    "open": "فتح"
+  },
+  "SettingsPage": {
+    "title": "الإعدادات",
+    "subtitle": "إدارة المنصات والتنبيهات والإعدادات العامة",
+    "tabs": {
+      "platforms": "المنصات",
+      "notifications": "التنبيهات",
+      "general": "عام"
+    },
+    "platforms": {
+      "intro": "اربط المنصات لرؤية مشاريعك في لوحة التحكم. تُحفظ الـ tokens كمتغيرات بيئة مشفرة.",
+      "enterTokenPlaceholder": "أدخل {tokenVar}",
+      "test": "اختبار",
+      "howToGet": "كيف أحصل على {tokenVar}؟",
+      "vercelEnvHint": "تُحفظ الـ tokens كمتغيرات بيئة Vercel (مشفرة عند التخزين). للإضافة/التحديث: vercel env add TOKEN_NAME production"
+    },
+    "telegram": {
+      "title": "Telegram Bot",
+      "setupHeading": "الإعداد:",
+      "step1": "افتح @BotFather في Telegram → /newbot",
+      "step2": "انسخ الـ token → عيّنه كـ TELEGRAM_BOT_TOKEN",
+      "step3": "أرسل رسالة للبوت ثم زُر /getUpdates API",
+      "step4": "انسخ chat_id → عيّنه كـ TELEGRAM_CHAT_ID",
+      "activeAlertsHeading": "التنبيهات النشطة:",
+      "dailyReport": "تقرير يومي (08:00)",
+      "serviceDown": "توقف الخدمة",
+      "criticalFinding": "نتيجة حرجة",
+      "botCommands": "أوامر البوت (/status, /health, /audit)"
+    },
+    "general": {
+      "title": "الإعدادات العامة",
+      "dashboardName": "اسم اللوحة",
+      "githubUsername": "اسم مستخدم GitHub",
+      "vercelTeam": "فريق Vercel",
+      "vpsDeployDomain": "نطاق نشر VPS",
+      "changeHint": "للتغيير: حدّث متغيرات البيئة في لوحة Vercel أو عبر vercel env add"
+    }
+  },
+  "ListPage": {
+    "refresh": "تحديث",
+    "name": "الاسم",
+    "status": "الحالة",
+    "lastDeploy": "آخر نشر",
+    "lastPush": "آخر push",
+    "manage": "إدارة",
+    "noServers": "لا توجد خوادم",
+    "noProjects": "لا توجد مشاريع"
+  },
+  "VercelPage": {
+    "title": "Vercel Projects",
+    "domains": "النطاقات",
+    "openSite": "فتح الموقع",
+    "lastDeploy": "آخر نشر",
+    "lastCommit": "آخر commit"
+  },
+  "GithubPage": {
+    "title": "GitHub Repositories",
+    "lastPush": "آخر push"
+  },
+  "VpsPage": {
+    "title": "VPS - Hetzner",
+    "noServers": "لا توجد خوادم",
+    "manage": "إدارة"
+  },
+  "NetlifyPage": {
+    "title": "Netlify Sites",
+    "lastDeploy": "آخر نشر"
+  },
+  "CloudflarePage": {
+    "title": "Cloudflare",
+    "subtitle": "النطاقات وDNS وR2 Storage",
+    "name": "الاسم",
+    "createdAt": "تاريخ الإنشاء"
+  },
+  "CostsPage": {
+    "title": "التكاليف والاستخدام",
+    "totalMonthly": "إجمالي التكلفة الشهرية",
+    "perMonth": "/شهر",
+    "manage": "إدارة"
+  },
+  "CodeMapPage": {
+    "title": "خريطة: كود → منصة",
+    "subtitle": "مستودعاتك وأين تُنشر",
+    "connectedRepos": "مستودعات متصلة",
+    "noDeployment": "لا يوجد نشر",
+    "private": "خاص",
+    "searchPlaceholder": "بحث..."
+  },
+  "DomainsPage": {
+    "title": "خريطة النطاقات",
+    "subtitle": "إدارة DNS"
+  },
+  "HealthPage": {
+    "title": "Health Monitor",
+    "subtitle": "فحص التوفر...",
+    "checkNow": "فحص الآن",
+    "results": "النتائج"
   }
 }

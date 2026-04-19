@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { useTranslations, useLocale } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusBadge } from "@/components/dashboard/status-badge";
@@ -16,6 +17,9 @@ import type { VercelProject, VercelDeployment } from "@/lib/types";
 import { Link } from "@/i18n/navigation";
 
 export default function VercelProjectPage() {
+  const t = useTranslations("VercelPage");
+  const tCommon = useTranslations("Common");
+  const locale = useLocale();
   const params = useParams();
   const projectId = params.projectId as string;
   const [project, setProject] = useState<VercelProject | null>(null);
@@ -71,14 +75,14 @@ export default function VercelProjectPage() {
           {project.domains?.[0] && (
             <a href={`https://${project.domains[0]}`} target="_blank" rel="noopener noreferrer">
               <Button variant="outline" size="sm">
-                <ExternalLink className="h-4 w-4 ml-2" />
-                פתח אתר
+                <ExternalLink className="h-4 w-4 me-2" />
+                {t("openSite")}
               </Button>
             </a>
           )}
           <a href={mgmt.vercel.project(project.name)} target="_blank" rel="noopener noreferrer">
             <Button variant="outline" size="sm">
-              <Settings className="h-4 w-4 ml-2" />
+              <Settings className="h-4 w-4 me-2" />
               Vercel Dashboard
             </Button>
           </a>
@@ -87,7 +91,7 @@ export default function VercelProjectPage() {
 
       {/* Domains */}
       <Card>
-        <CardHeader><CardTitle>דומיינים</CardTitle></CardHeader>
+        <CardHeader><CardTitle>{t("domains")}</CardTitle></CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">
             {project.domains?.map((d) => (
@@ -109,11 +113,11 @@ export default function VercelProjectPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="text-right">סטטוס</TableHead>
-                <TableHead className="text-right">Target</TableHead>
-                <TableHead className="text-right">Commit</TableHead>
-                <TableHead className="text-right">תאריך</TableHead>
-                <TableHead className="text-right">URL</TableHead>
+                <TableHead className="text-start">{tCommon("status")}</TableHead>
+                <TableHead className="text-start">Target</TableHead>
+                <TableHead className="text-start">Commit</TableHead>
+                <TableHead className="text-start">Date</TableHead>
+                <TableHead className="text-start">URL</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -136,7 +140,7 @@ export default function VercelProjectPage() {
                     ) : "-"}
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
-                    {new Date(d.created).toLocaleDateString("he-IL", {
+                    {new Date(d.created).toLocaleDateString(locale, {
                       day: "2-digit",
                       month: "2-digit",
                       hour: "2-digit",

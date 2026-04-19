@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusBadge } from "@/components/dashboard/status-badge";
@@ -20,6 +21,10 @@ interface HealthResponse {
 }
 
 export default function HealthPage() {
+  const t = useTranslations("HealthPage");
+  const tCommon = useTranslations("Common");
+  const tTable = useTranslations("UnifiedTable");
+  const locale = useLocale();
   const [data, setData] = useState<HealthResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -43,12 +48,12 @@ export default function HealthPage() {
     <main className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Health Monitor</h1>
-          <p className="text-muted-foreground">בדיקת זמינות לכל השירותים</p>
+          <h1 className="text-2xl font-bold">{t("title")}</h1>
+          <p className="text-muted-foreground">{t("subtitle")}</p>
         </div>
         <Button variant="outline" size="sm" onClick={runCheck} disabled={loading}>
-          <RefreshCw className={`h-4 w-4 ml-2 ${loading ? "animate-spin" : ""}`} />
-          בדוק עכשיו
+          <RefreshCw className={`h-4 w-4 me-2 ${loading ? "animate-spin" : ""}`} />
+          {t("checkNow")}
         </Button>
       </div>
 
@@ -88,11 +93,11 @@ export default function HealthPage() {
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
                   <Activity className="h-4 w-4" />
-                  תוצאות
+                  {t("results")}
                 </CardTitle>
                 <p className="text-xs text-muted-foreground flex items-center gap-1">
                   <Clock className="h-3 w-3" />
-                  {new Date(data.checkedAt).toLocaleString("he-IL")}
+                  {new Date(data.checkedAt).toLocaleString(locale)}
                 </p>
               </div>
             </CardHeader>
@@ -100,11 +105,11 @@ export default function HealthPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-right">שם</TableHead>
-                    <TableHead className="text-right">פלטפורמה</TableHead>
-                    <TableHead className="text-right">סטטוס</TableHead>
-                    <TableHead className="text-right">Status Code</TableHead>
-                    <TableHead className="text-right">Response Time</TableHead>
+                    <TableHead className="text-start">{tCommon("name")}</TableHead>
+                    <TableHead className="text-start">{tTable("platform")}</TableHead>
+                    <TableHead className="text-start">{tCommon("status")}</TableHead>
+                    <TableHead className="text-start">Status Code</TableHead>
+                    <TableHead className="text-start">Response Time</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -147,7 +152,7 @@ export default function HealthPage() {
       ) : (
         <Card>
           <CardContent className="py-10 text-center text-muted-foreground">
-            <p>לא הצלחתי לטעון נתוני health check</p>
+            <p>{tCommon("error")}</p>
           </CardContent>
         </Card>
       )}

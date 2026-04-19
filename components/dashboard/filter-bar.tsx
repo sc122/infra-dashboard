@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Search, Triangle, Hexagon, Container, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -34,6 +35,7 @@ interface FilterBarProps {
 }
 
 export function FilterBar({ filters, onChange, counts }: FilterBarProps) {
+  const t = useTranslations("FilterBar");
   const toggle = (key: keyof Filters, value: string) => {
     onChange({ ...filters, [key]: filters[key] === value ? null : value });
   };
@@ -44,13 +46,13 @@ export function FilterBar({ filters, onChange, counts }: FilterBarProps) {
     <div className="flex flex-wrap items-center gap-2 pb-3">
       {/* Search */}
       <div className="relative">
-        <Search className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+        <Search className="absolute end-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
         <input
           type="text"
-          placeholder="חיפוש..."
+          placeholder={t("searchPlaceholder")}
           value={filters.search}
           onChange={(e) => onChange({ ...filters, search: e.target.value })}
-          className="h-8 w-40 rounded-md border bg-transparent pr-8 pl-2 text-xs outline-none focus:ring-1 focus:ring-primary"
+          className="h-8 w-40 rounded-md border bg-transparent pe-8 ps-2 text-xs outline-none focus:ring-1 focus:ring-primary"
         />
       </div>
 
@@ -122,7 +124,7 @@ export function FilterBar({ filters, onChange, counts }: FilterBarProps) {
           className="inline-flex items-center gap-1 h-7 px-2 rounded-full text-xs text-muted-foreground hover:text-foreground border hover:bg-muted transition-all"
         >
           <X className="h-3 w-3" />
-          נקה
+          {t("clear")}
         </button>
       )}
     </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import { useTranslations } from "next-intl";
 import { OverviewCards, type PlatformSummary } from "@/components/dashboard/overview-cards";
 import { UnifiedTable, classifyProject } from "@/components/dashboard/unified-table";
 import { FilterBar, type Filters } from "@/components/dashboard/filter-bar";
@@ -14,6 +15,7 @@ import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function DashboardPage() {
+  const t = useTranslations("HomePage");
   const [loading, setLoading] = useState(true);
   const [projects, setProjects] = useState<Project[]>([]);
   const [filters, setFilters] = useState<Filters>({ platform: null, status: null, tier: null, search: "" });
@@ -128,14 +130,14 @@ export default function DashboardPage() {
     <main className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">סקירה כללית</h1>
+          <h1 className="text-2xl font-bold">{t("title")}</h1>
           <p className="text-muted-foreground">
-            {projects.length} פרויקטים מזוהים אוטומטית
+            {t("subtitle", { count: projects.length })}
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={loadData} disabled={loading}>
-          <RefreshCw className={`h-4 w-4 ml-2 ${loading ? "animate-spin" : ""}`} />
-          רענון
+          <RefreshCw className={`h-4 w-4 me-2 ${loading ? "animate-spin" : ""}`} />
+          {t("refresh")}
         </Button>
       </div>
 
@@ -154,7 +156,7 @@ export default function DashboardPage() {
 
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle>כל הפרויקטים</CardTitle>
+          <CardTitle>{t("allProjects")}</CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -167,7 +169,7 @@ export default function DashboardPage() {
               <UnifiedTable projects={filtered} />
               {filtered.length === 0 && projects.length > 0 && (
                 <p className="text-center text-sm text-muted-foreground py-8">
-                  אין תוצאות לפילטרים הנוכחיים
+                  {t("noFilterResults")}
                 </p>
               )}
             </>

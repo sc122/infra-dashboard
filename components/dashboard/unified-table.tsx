@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -60,6 +61,7 @@ interface Props {
 
 export function UnifiedTable({ projects }: Props) {
   const [showInactive, setShowInactive] = useState(false);
+  const t = useTranslations("UnifiedTable");
 
   // Classify and group
   const classified = projects.map((p) => ({ ...p, tier: classifyProject(p) }));
@@ -71,13 +73,13 @@ export function UnifiedTable({ projects }: Props) {
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead className="text-right w-[100px]">פלטפורמה</TableHead>
-          <TableHead className="text-right">פרויקט</TableHead>
-          <TableHead className="text-right w-[80px]">סטטוס</TableHead>
-          <TableHead className="text-right">דומיין</TableHead>
-          <TableHead className="text-right">Repo</TableHead>
-          <TableHead className="text-right w-[70px]">CI/CD</TableHead>
-          <TableHead className="text-right w-[40px]"></TableHead>
+          <TableHead className="text-start w-[100px]">{t("platform")}</TableHead>
+          <TableHead className="text-start">{t("project")}</TableHead>
+          <TableHead className="text-start w-[80px]">{t("status")}</TableHead>
+          <TableHead className="text-start">Domain</TableHead>
+          <TableHead className="text-start">Repo</TableHead>
+          <TableHead className="text-start w-[70px]">CI/CD</TableHead>
+          <TableHead className="text-start w-[40px]"></TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -110,7 +112,7 @@ export function UnifiedTable({ projects }: Props) {
                   <span className="font-medium">Inactive</span>
                   <span>({inactive.length} sites)</span>
                   {!showInactive && (
-                    <span className="text-[10px]">— לחץ להצגה</span>
+                    <span className="text-[10px]">— {t("clickToShow")}</span>
                   )}
                 </div>
               </TableCell>
@@ -142,6 +144,8 @@ function SectionHeader({ label, count, color }: { label: string; count: number; 
 // ─── Project Row ─────────────────────────────────────────────
 
 function ProjectRow({ project: p, tier }: { project: Project; tier: ProjectTier }) {
+  const t = useTranslations("UnifiedTable");
+  const tCommon = useTranslations("Common");
   const platform = platformConfig[p.hosting.platform] ?? platformConfig.vercel;
   const Icon = platform.icon;
   const tc = tierConfig[tier];
@@ -212,7 +216,7 @@ function ProjectRow({ project: p, tier }: { project: Project; tier: ProjectTier 
         {p.cicd.hasActions ? (
           <CICDBadge conclusion={p.cicd.lastRunConclusion} />
         ) : p.cicd.hasDockerfile ? (
-          <Badge variant="outline" className="text-[10px] px-1">ידני</Badge>
+          <Badge variant="outline" className="text-[10px] px-1">{t("manual")}</Badge>
         ) : (
           <span className="text-xs text-muted-foreground">-</span>
         )}
@@ -220,7 +224,7 @@ function ProjectRow({ project: p, tier }: { project: Project; tier: ProjectTier 
 
       {/* Link */}
       <TableCell>
-        <MgmtLink href={p.url} tooltip="פתח" iconOnly />
+        <MgmtLink href={p.url} tooltip={tCommon("open")} iconOnly />
       </TableCell>
     </TableRow>
   );

@@ -45,7 +45,22 @@
     "error": "Ошибка",
     "retry": "Повторить",
     "search": "Поиск",
-    "close": "Закрыть"
+    "close": "Закрыть",
+    "name": "Имя",
+    "status": "Статус",
+    "manage": "Управление",
+    "open": "Открыть",
+    "test": "Тест",
+    "back": "Назад",
+    "continue": "Далее",
+    "skip": "Пропустить",
+    "noResults": "Нет результатов",
+    "clear": "Очистить",
+    "connected": "Подключено",
+    "notConnected": "Не подключено",
+    "actions": "Действия",
+    "platform": "Платформа",
+    "project": "Проект"
   },
   "CommandPalette": {
     "placeholder": "Поиск проектов, страниц или настроек...",
@@ -55,5 +70,221 @@
       "platforms": "Платформы",
       "actions": "Действия"
     }
+  },
+  "StatusBadge": {
+    "healthy": "В норме",
+    "up": "Активен",
+    "degraded": "Частично",
+    "down": "Не работает",
+    "error": "Ошибка"
+  },
+  "HealthScore": {
+    "healthy": "В норме",
+    "needsAttention": "Требует внимания",
+    "critical": "Критично"
+  },
+  "FilterBar": {
+    "searchPlaceholder": "Поиск...",
+    "clear": "Очистить"
+  },
+  "MetricsChart": {
+    "noData": "Нет данных"
+  },
+  "UnifiedTable": {
+    "platform": "Платформа",
+    "project": "Проект",
+    "status": "Статус",
+    "manual": "Вручную",
+    "clickToShow": "Нажмите для просмотра"
+  },
+  "OverviewCards": {
+    "vercelProjects": "{count, plural, one {{count} проект} few {{count} проекта} many {{count} проектов} other {{count} проекта}}",
+    "netlifySites": "{count, plural, one {{count} сайт} few {{count} сайта} many {{count} сайтов} other {{count} сайта}}",
+    "cloudflareZones": "{count, plural, one {{count} зона} few {{count} зоны} many {{count} зон} other {{count} зоны}}",
+    "hetznerServers": "{count, plural, one {{count} сервер} few {{count} сервера} many {{count} серверов} other {{count} сервера}}",
+    "healthRatio": "{up}/{total} активных"
+  },
+  "SetupWizard": {
+    "welcome": {
+      "title": "Добро пожаловать в Infra Dashboard",
+      "description": "Подключите ваши платформы, чтобы видеть все проекты в одном месте. Можно добавить или изменить в любое время в настройках.",
+      "start": "Поехали",
+      "skip": "Пропустить — настрою позже"
+    },
+    "connect": {
+      "title": "Подключите платформы",
+      "connectedCount": "{count} подключено",
+      "alreadyConnected": "Уже подключено",
+      "test": "Тест",
+      "howToGetToken": "Как получить токен",
+      "back": "Назад",
+      "continue": "Далее ({count} подключено)"
+    },
+    "done": {
+      "title": "Готово!",
+      "description": "{count} платформ подключено. Дашборд автоматически найдёт все ваши проекты.",
+      "tokensHint": "Чтобы сохранить токены, добавьте их как переменные окружения в Vercel или в .env.local",
+      "openDashboard": "Открыть дашборд"
+    }
+  },
+  "HomePage": {
+    "title": "Обзор",
+    "subtitle": "{count} проектов обнаружено автоматически",
+    "refresh": "Обновить",
+    "allProjects": "Все проекты",
+    "noFilterResults": "Нет результатов для текущих фильтров"
+  },
+  "AlertsPage": {
+    "title": "Уведомления",
+    "subtitle": "Настройка уведомлений Telegram",
+    "telegramSetupTitle": "Настройка:",
+    "telegramSteps": {
+      "step1": "Откройте @BotFather в Telegram и отправьте /newbot",
+      "step2": "Дайте боту имя (например: Infra Dashboard Bot)",
+      "step3": "Скопируйте Token и поместите в TELEGRAM_BOT_TOKEN",
+      "step4": "Отправьте сообщение боту, затем перейдите на https://api.telegram.org/bot<TOKEN>/getUpdates",
+      "step5": "Скопируйте chat_id и поместите в TELEGRAM_CHAT_ID"
+    },
+    "sendTest": "Отправить тестовое сообщение",
+    "sentSuccess": "Отправлено!",
+    "errorPrefix": "Ошибка: {error}",
+    "alertTypesTitle": "Типы уведомлений",
+    "types": {
+      "criticalServiceDownTitle": "Critical — сервис недоступен",
+      "criticalServiceDownDesc": "Мгновенное уведомление, когда проект не проходит health check",
+      "criticalVpsDownTitle": "Critical — VPS не отвечает",
+      "criticalVpsDownDesc": "Когда сервер Hetzner перестаёт отвечать API",
+      "warningDeployFailedTitle": "Warning — деплой не удался",
+      "warningDeployFailedDesc": "Когда деплой Vercel падает",
+      "warningSslExpiringTitle": "Warning — SSL истекает",
+      "warningSslExpiringDesc": "Когда SSL-сертификат истекает в течение 14 дней",
+      "infoCostsExceededTitle": "Info — превышение расходов",
+      "infoCostsExceededDesc": "Когда месячные расходы превышают заданный бюджет"
+    },
+    "scheduleTitle": "Расписание",
+    "scheduleDescription": "Health check выполняется каждые 5 минут через Vercel Cron Jobs. Уведомления отправляются только при наличии проблем (не каждые 5 минут)."
+  },
+  "AuditPage": {
+    "title": "Аудит инфраструктуры",
+    "subtitleFmt": "Автоматический анализ · {when} · {rules} rules",
+    "loadError": "Не удалось загрузить аудит",
+    "runAudit": "Запустить аудит",
+    "categories": {
+      "security": "Безопасность",
+      "deployment": "Deployment",
+      "cicd": "CI/CD",
+      "cleanup": "Очистка",
+      "performance": "Производительность"
+    },
+    "severity": {
+      "critical": "Критично",
+      "warning": "Предупреждение",
+      "info": "Инфо"
+    },
+    "summary": {
+      "total": "Всего находок",
+      "critical": "Критично",
+      "warning": "Предупреждения",
+      "info": "Инфо"
+    },
+    "all": "Все",
+    "open": "Открыть"
+  },
+  "SettingsPage": {
+    "title": "Настройки",
+    "subtitle": "Управление платформами, уведомлениями и общими настройками",
+    "tabs": {
+      "platforms": "Платформы",
+      "notifications": "Уведомления",
+      "general": "Общие"
+    },
+    "platforms": {
+      "intro": "Подключите платформы, чтобы видеть свои проекты в дашборде. Токены хранятся как зашифрованные переменные окружения.",
+      "enterTokenPlaceholder": "Введите {tokenVar}",
+      "test": "Тест",
+      "howToGet": "Как получить {tokenVar}?",
+      "vercelEnvHint": "Токены хранятся как Vercel Environment Variables (зашифрованы при хранении). Добавление/обновление: vercel env add TOKEN_NAME production"
+    },
+    "telegram": {
+      "title": "Telegram Bot",
+      "setupHeading": "Настройка:",
+      "step1": "Откройте @BotFather в Telegram → /newbot",
+      "step2": "Скопируйте token → задайте как TELEGRAM_BOT_TOKEN",
+      "step3": "Отправьте сообщение боту, затем перейдите на /getUpdates API",
+      "step4": "Скопируйте chat_id → задайте как TELEGRAM_CHAT_ID",
+      "activeAlertsHeading": "Активные уведомления:",
+      "dailyReport": "Ежедневный отчёт (08:00)",
+      "serviceDown": "Сервис недоступен",
+      "criticalFinding": "Критическая находка",
+      "botCommands": "Команды бота (/status, /health, /audit)"
+    },
+    "general": {
+      "title": "Общие настройки",
+      "dashboardName": "Название дашборда",
+      "githubUsername": "GitHub username",
+      "vercelTeam": "Команда Vercel",
+      "vpsDeployDomain": "VPS deploy domain",
+      "changeHint": "Чтобы изменить настройки: обновите env vars в дашборде Vercel или через vercel env add"
+    }
+  },
+  "ListPage": {
+    "refresh": "Обновить",
+    "name": "Имя",
+    "status": "Статус",
+    "lastDeploy": "Последний деплой",
+    "lastPush": "Последний push",
+    "manage": "Управление",
+    "noServers": "Серверов не найдено",
+    "noProjects": "Проектов не найдено"
+  },
+  "VercelPage": {
+    "title": "Vercel Projects",
+    "domains": "Домены",
+    "openSite": "Открыть сайт",
+    "lastDeploy": "Последний деплой",
+    "lastCommit": "Последний commit"
+  },
+  "GithubPage": {
+    "title": "GitHub Repositories",
+    "lastPush": "Последний push"
+  },
+  "VpsPage": {
+    "title": "VPS - Hetzner",
+    "noServers": "Серверов не найдено",
+    "manage": "Управление"
+  },
+  "NetlifyPage": {
+    "title": "Netlify Sites",
+    "lastDeploy": "Последний деплой"
+  },
+  "CloudflarePage": {
+    "title": "Cloudflare",
+    "subtitle": "Домены, DNS и R2 Storage",
+    "name": "Имя",
+    "createdAt": "Дата создания"
+  },
+  "CostsPage": {
+    "title": "Расходы и использование",
+    "totalMonthly": "Общая месячная стоимость",
+    "perMonth": "/мес",
+    "manage": "Управление"
+  },
+  "CodeMapPage": {
+    "title": "Карта: код → платформа",
+    "subtitle": "Ваши репозитории и где они задеплоены",
+    "connectedRepos": "подключённых репозиториев",
+    "noDeployment": "Нет деплоя",
+    "private": "Private",
+    "searchPlaceholder": "Поиск..."
+  },
+  "DomainsPage": {
+    "title": "Карта доменов",
+    "subtitle": "Управление DNS"
+  },
+  "HealthPage": {
+    "title": "Health Monitor",
+    "subtitle": "Проверка доступности...",
+    "checkNow": "Проверить сейчас",
+    "results": "Результаты"
   }
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,8 @@ const platformIcons: Record<string, typeof Triangle> = {
 };
 
 export default function SettingsPage() {
+  const t = useTranslations("SettingsPage");
+  const tCommon = useTranslations("Common");
   const [data, setData] = useState<SettingsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [testing, setTesting] = useState<string | null>(null);
@@ -73,21 +76,21 @@ export default function SettingsPage() {
   return (
     <main className="p-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">הגדרות</h1>
-        <p className="text-muted-foreground">ניהול פלטפורמות, התראות, והגדרות כלליות</p>
+        <h1 className="text-2xl font-bold">{t("title")}</h1>
+        <p className="text-muted-foreground">{t("subtitle")}</p>
       </div>
 
       <Tabs defaultValue="platforms" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="platforms">פלטפורמות</TabsTrigger>
-          <TabsTrigger value="notifications">התראות</TabsTrigger>
-          <TabsTrigger value="general">כללי</TabsTrigger>
+          <TabsTrigger value="platforms">{t("tabs.platforms")}</TabsTrigger>
+          <TabsTrigger value="notifications">{t("tabs.notifications")}</TabsTrigger>
+          <TabsTrigger value="general">{t("tabs.general")}</TabsTrigger>
         </TabsList>
 
         {/* ── Platforms Tab ── */}
         <TabsContent value="platforms" className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            חבר פלטפורמות כדי לראות את הפרויקטים שלך בדשבורד. Tokens נשמרים כ-environment variables מוצפנים.
+            {t("platforms.intro")}
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {data?.platforms.map((platform) => {
@@ -105,7 +108,7 @@ export default function SettingsPage() {
                         </div>
                       </div>
                       <Badge variant={platform.connected ? "default" : "secondary"} className={platform.connected ? "bg-green-500" : ""}>
-                        {platform.connected ? "מחובר" : "לא מחובר"}
+                        {platform.connected ? tCommon("connected") : tCommon("notConnected")}
                       </Badge>
                     </div>
 
@@ -113,7 +116,7 @@ export default function SettingsPage() {
                       <div className="flex gap-2">
                         <input
                           type="password"
-                          placeholder={platform.connected ? "••••••••" : `הזן ${platform.tokenVar}`}
+                          placeholder={platform.connected ? "••••••••" : t("platforms.enterTokenPlaceholder", { tokenVar: platform.tokenVar })}
                           value={tokens[platform.id] ?? ""}
                           onChange={(e) => setTokens((prev) => ({ ...prev, [platform.id]: e.target.value }))}
                           className="flex-1 h-8 rounded-md border bg-transparent px-2 text-xs outline-none focus:ring-1 focus:ring-primary font-mono"
@@ -128,7 +131,7 @@ export default function SettingsPage() {
                           {testing === platform.id ? (
                             <Loader2 className="h-3 w-3 animate-spin" />
                           ) : (
-                            "בדוק"
+                            t("platforms.test")
                           )}
                         </Button>
                       </div>
@@ -147,7 +150,7 @@ export default function SettingsPage() {
                         className="text-[10px] text-blue-500 hover:underline flex items-center gap-1"
                       >
                         <ExternalLink className="h-3 w-3" />
-                        איך להשיג {platform.tokenVar}?
+                        {t("platforms.howToGet", { tokenVar: platform.tokenVar })}
                       </a>
                     </div>
                   </CardContent>
@@ -160,10 +163,7 @@ export default function SettingsPage() {
             <CardContent className="pt-4">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Shield className="h-4 w-4" />
-                <p>
-                  Tokens נשמרים כ-Vercel Environment Variables (מוצפנים at rest).
-                  להוספה/עדכון: <code className="bg-muted px-1 rounded text-xs">vercel env add TOKEN_NAME production</code>
-                </p>
+                <p>{t("platforms.vercelEnvHint")}</p>
               </div>
             </CardContent>
           </Card>
@@ -182,25 +182,25 @@ export default function SettingsPage() {
               <div className="flex items-center gap-2">
                 <Badge variant={data?.platforms.find((p) => p.id === "telegram")?.connected ? "default" : "secondary"}
                   className={data?.platforms.find((p) => p.id === "telegram")?.connected ? "bg-green-500" : ""}>
-                  {data?.platforms.find((p) => p.id === "telegram")?.connected ? "מחובר" : "לא מחובר"}
+                  {data?.platforms.find((p) => p.id === "telegram")?.connected ? tCommon("connected") : tCommon("notConnected")}
                 </Badge>
               </div>
               <div className="space-y-2 text-sm">
-                <p className="font-medium">הגדרה:</p>
+                <p className="font-medium">{t("telegram.setupHeading")}</p>
                 <ol className="list-decimal list-inside space-y-1 text-muted-foreground text-xs">
-                  <li>פתח @BotFather בטלגרם → <code>/newbot</code></li>
-                  <li>העתק token → הגדר כ-<code>TELEGRAM_BOT_TOKEN</code></li>
-                  <li>שלח הודעה לבוט, אז גש ל-<code>/getUpdates</code> API</li>
-                  <li>העתק chat_id → הגדר כ-<code>TELEGRAM_CHAT_ID</code></li>
+                  <li>{t("telegram.step1")}</li>
+                  <li>{t("telegram.step2")}</li>
+                  <li>{t("telegram.step3")}</li>
+                  <li>{t("telegram.step4")}</li>
                 </ol>
               </div>
               <div className="border-t pt-3 space-y-2">
-                <p className="text-sm font-medium">התראות פעילות:</p>
+                <p className="text-sm font-medium">{t("telegram.activeAlertsHeading")}</p>
                 <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="flex items-center gap-1"><CheckCircle className="h-3 w-3 text-green-500" /> דוח יומי (8:00)</div>
-                  <div className="flex items-center gap-1"><CheckCircle className="h-3 w-3 text-green-500" /> שירות נפל</div>
-                  <div className="flex items-center gap-1"><CheckCircle className="h-3 w-3 text-green-500" /> ממצא קריטי</div>
-                  <div className="flex items-center gap-1"><CheckCircle className="h-3 w-3 text-green-500" /> פקודות בוט (/status, /health, /audit)</div>
+                  <div className="flex items-center gap-1"><CheckCircle className="h-3 w-3 text-green-500" /> {t("telegram.dailyReport")}</div>
+                  <div className="flex items-center gap-1"><CheckCircle className="h-3 w-3 text-green-500" /> {t("telegram.serviceDown")}</div>
+                  <div className="flex items-center gap-1"><CheckCircle className="h-3 w-3 text-green-500" /> {t("telegram.criticalFinding")}</div>
+                  <div className="flex items-center gap-1"><CheckCircle className="h-3 w-3 text-green-500" /> {t("telegram.botCommands")}</div>
                 </div>
               </div>
             </CardContent>
@@ -210,34 +210,32 @@ export default function SettingsPage() {
         {/* ── General Tab ── */}
         <TabsContent value="general" className="space-y-4">
           <Card>
-            <CardHeader><CardTitle>הגדרות כלליות</CardTitle></CardHeader>
+            <CardHeader><CardTitle>{t("general.title")}</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-medium">שם הדשבורד</label>
+                  <label className="text-xs font-medium">{t("general.dashboardName")}</label>
                   <p className="text-sm mt-1 bg-muted px-2 py-1 rounded">{data?.config.dashboardName || "Infra Dashboard"}</p>
                   <p className="text-[10px] text-muted-foreground mt-1">env: NEXT_PUBLIC_DASHBOARD_NAME</p>
                 </div>
                 <div>
-                  <label className="text-xs font-medium">GitHub Username</label>
+                  <label className="text-xs font-medium">{t("general.githubUsername")}</label>
                   <p className="text-sm mt-1 bg-muted px-2 py-1 rounded font-mono">{data?.config.githubUsername || "—"}</p>
                   <p className="text-[10px] text-muted-foreground mt-1">env: NEXT_PUBLIC_GITHUB_USERNAME</p>
                 </div>
                 <div>
-                  <label className="text-xs font-medium">Vercel Team</label>
+                  <label className="text-xs font-medium">{t("general.vercelTeam")}</label>
                   <p className="text-sm mt-1 bg-muted px-2 py-1 rounded font-mono">{data?.config.vercelTeamSlug || "—"}</p>
                   <p className="text-[10px] text-muted-foreground mt-1">env: NEXT_PUBLIC_VERCEL_TEAM_SLUG</p>
                 </div>
                 <div>
-                  <label className="text-xs font-medium">VPS Deploy Domain</label>
+                  <label className="text-xs font-medium">{t("general.vpsDeployDomain")}</label>
                   <p className="text-sm mt-1 bg-muted px-2 py-1 rounded font-mono">{data?.config.deployDomain || "—"}</p>
                   <p className="text-[10px] text-muted-foreground mt-1">env: NEXT_PUBLIC_DEPLOY_DOMAIN</p>
                 </div>
               </div>
               <div className="border-t pt-3">
-                <p className="text-xs text-muted-foreground">
-                  לשינוי הגדרות: עדכן env vars ב-Vercel Dashboard או דרך <code>vercel env add</code>
-                </p>
+                <p className="text-xs text-muted-foreground">{t("general.changeHint")}</p>
               </div>
             </CardContent>
           </Card>

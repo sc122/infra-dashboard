@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +31,10 @@ interface CodeProject {
 type FilterState = { platform: string | null; cicd: string | null; search: string };
 
 export default function CodeMapPage() {
+  const t = useTranslations("CodeMapPage");
+  const tCommon = useTranslations("Common");
+  const tFilter = useTranslations("FilterBar");
+  const tTable = useTranslations("UnifiedTable");
   const [projects, setProjects] = useState<CodeProject[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<FilterState>({ platform: null, cicd: null, search: "" });
@@ -161,25 +166,25 @@ export default function CodeMapPage() {
     <main className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Code → Deploy Map</h1>
-          <p className="text-muted-foreground">מיפוי: קוד → פלטפורמה → deployment → דומיין</p>
+          <h1 className="text-2xl font-bold">{t("title")}</h1>
+          <p className="text-muted-foreground">{t("subtitle")}</p>
         </div>
-        <Button variant="outline" size="sm" onClick={loadData}><RefreshCw className="h-4 w-4 ml-2" />רענון</Button>
+        <Button variant="outline" size="sm" onClick={loadData}><RefreshCw className="h-4 w-4 me-2" />{tCommon("refresh")}</Button>
       </div>
 
       {/* Summary */}
       <div className="grid grid-cols-3 gap-4">
         <Card><CardContent className="pt-4 text-center">
           <div className="text-2xl font-bold text-green-600">{connected.length}</div>
-          <p className="text-xs text-muted-foreground">repos מחוברים</p>
+          <p className="text-xs text-muted-foreground">{t("connectedRepos")}</p>
         </CardContent></Card>
         <Card><CardContent className="pt-4 text-center">
           <div className="text-2xl font-bold text-muted-foreground">{unconnected.length}</div>
-          <p className="text-xs text-muted-foreground">ללא deployment</p>
+          <p className="text-xs text-muted-foreground">{t("noDeployment")}</p>
         </CardContent></Card>
         <Card><CardContent className="pt-4 text-center">
           <div className="text-2xl font-bold text-blue-600">{projects.filter((p) => p.cicd.hasActions).length}</div>
-          <p className="text-xs text-muted-foreground">עם CI/CD</p>
+          <p className="text-xs text-muted-foreground">CI/CD</p>
         </CardContent></Card>
       </div>
 
@@ -188,10 +193,10 @@ export default function CodeMapPage() {
           {/* Filters */}
           <div className="flex flex-wrap items-center gap-2 pb-3">
             <div className="relative">
-              <Search className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-              <input type="text" placeholder="חיפוש repo..." value={filters.search}
+              <Search className="absolute end-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <input type="text" placeholder={tFilter("searchPlaceholder")} value={filters.search}
                 onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
-                className="h-8 w-40 rounded-md border bg-transparent pr-8 pl-2 text-xs outline-none focus:ring-1 focus:ring-primary" />
+                className="h-8 w-40 rounded-md border bg-transparent pe-8 ps-2 text-xs outline-none focus:ring-1 focus:ring-primary" />
             </div>
             <div className="w-px h-6 bg-border" />
             {(["vercel", "netlify", "docker"] as const).map((pl) => {
@@ -216,7 +221,7 @@ export default function CodeMapPage() {
             {hasFilter && (
               <button onClick={() => setFilters({ platform: null, cicd: null, search: "" })}
                 className="inline-flex items-center gap-1 h-7 px-2 rounded-full text-xs text-muted-foreground hover:text-foreground border hover:bg-muted">
-                <X className="h-3 w-3" />נקה
+                <X className="h-3 w-3" />{tFilter("clear")}
               </button>
             )}
           </div>
@@ -225,18 +230,18 @@ export default function CodeMapPage() {
           {filtered.connected.length > 0 && (
             <>
               <div className="flex items-center gap-2 text-xs font-semibold text-green-600 py-2">
-                <Link2 className="h-3.5 w-3.5" />מחוברים ({filtered.connected.length})
+                <Link2 className="h-3.5 w-3.5" />{tCommon("connected")} ({filtered.connected.length})
               </div>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-right">Repo</TableHead>
-                    <TableHead className="text-right w-[60px]">שפה</TableHead>
-                    <TableHead className="text-right">Last Commit</TableHead>
-                    <TableHead className="text-right w-[100px]">פלטפורמה</TableHead>
-                    <TableHead className="text-right">דומיין</TableHead>
-                    <TableHead className="text-right w-[80px]">CI/CD</TableHead>
-                    <TableHead className="text-right w-[40px]"></TableHead>
+                    <TableHead className="text-start">Repo</TableHead>
+                    <TableHead className="text-start w-[60px]">Language</TableHead>
+                    <TableHead className="text-start">Last Commit</TableHead>
+                    <TableHead className="text-start w-[100px]">{tTable("platform")}</TableHead>
+                    <TableHead className="text-start">Domain</TableHead>
+                    <TableHead className="text-start w-[80px]">CI/CD</TableHead>
+                    <TableHead className="text-start w-[40px]"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -253,8 +258,8 @@ export default function CodeMapPage() {
                 onClick={() => setShowUnconnected(!showUnconnected)}>
                 {showUnconnected ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
                 <Link2Off className="h-3.5 w-3.5" />
-                ללא deployment ({filtered.unconnected.length})
-                {!showUnconnected && <span className="font-normal text-[10px]">— לחץ להצגה</span>}
+                {t("noDeployment")} ({filtered.unconnected.length})
+                {!showUnconnected && <span className="font-normal text-[10px]">— {tTable("clickToShow")}</span>}
               </button>
               {showUnconnected && (
                 <Table>
@@ -286,7 +291,7 @@ function RepoRow({ project: p, compact = false }: { project: CodeProject; compac
           <GitBranch className="h-3.5 w-3.5 shrink-0" />
           {p.repo.name}
         </a>
-        {p.repo.private && <Badge variant="outline" className="text-[9px] px-1 mr-1">Private</Badge>}
+        {p.repo.private && <Badge variant="outline" className="text-[9px] px-1 ms-1">Private</Badge>}
       </TableCell>
       <TableCell><LanguageDot language={p.repo.language} /></TableCell>
       <TableCell className="text-xs text-muted-foreground max-w-[180px]">

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import {
   LineChart,
   Line,
@@ -29,10 +30,11 @@ export function MetricsChart({
   type = "area",
   height = 200,
 }: MetricsChartProps) {
+  const t = useTranslations("MetricsChart");
   if (data.length === 0) {
     return (
       <div className="h-[200px] flex items-center justify-center text-muted-foreground text-sm">
-        אין נתונים זמינים
+        {t("noData")}
       </div>
     );
   }

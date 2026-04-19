@@ -27,7 +27,7 @@ export function UsageBar({ label, used, limit, unit, formatUsed, formatLimit }: 
         <span className="font-medium">{label}</span>
         <span className={cn("font-mono text-xs", textColor)}>
           {fmtUsed} / {fmtLimit} {unit}
-          <span className="mr-2 text-muted-foreground">({percentage.toFixed(1)}%)</span>
+          <span className="ms-2 text-muted-foreground">({percentage.toFixed(1)}%)</span>
         </span>
       </div>
       <div className="h-2.5 w-full rounded-full bg-muted overflow-hidden">
