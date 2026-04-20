@@ -9,7 +9,7 @@
 
 **[Live Demo (mock data)](https://infra-demo-coral.vercel.app)** — try it without connecting any platforms
 
-[![Watch Demo](https://img.youtube.com/vi/JHVdl78EoAM/maxresdefault.jpg)](https://youtu.be/JHVdl78EoAM)
+[![Watch Demo](https://i.ytimg.com/vi/zRZq8MtXNbY/maxresdefault.jpg)](https://www.youtube.com/watch?v=zRZq8MtXNbY)
 
 > *Click to watch the 43s demo — auto-discovery, filters, code map, health monitoring, and one-click deploy.*
 
